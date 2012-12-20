@@ -1,0 +1,171 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Untitled Document</title>
+
+
+<link rel="stylesheet" type="text/css" href="anystyles.css" />
+<link rel="stylesheet" type="text/css" href="http://ajax.googleapis.com/ajax/libs/jqueryui/1.8/themes/cupertino/jquery-ui.css" />
+
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.8.2/jquery.min.js"></script>
+<script src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.9.0/jquery-ui.min.js"></script>
+
+<script type='text/javascript'>
+
+//http://www.jqplot.com/tests/pie-donut-charts.php
+
+
+
+//http://webdeveloperplus.com/jquery/collpasible-drag-drop-panels/
+$(document).ready(function(){
+
+
+var anypanel = {
+	_init : function(){
+		this.element.addClass('ui-widget');
+		this.element.children(":first").wrap($("<div \/>").addClass('ui-widget-header ui-corner-top')).css({'fontSize':'1em','padding':'12px;'});
+		this.element.children(":nth-child(2)").addClass('ui-widget-content ui-corner-bottom').css('borderTop','0');
+		},
+	options : {
+		state : 'open',
+		},
+	close : function(){this.element.find('.dragbox-content').hide(); this.options.state = 'close'},
+	open : function(){this.element.find('.dragbox-content').hide(); this.options.state = 'open'}
+	}
+
+	$.widget("ui.anypanel",anypanel); // create the widget
+
+
+	$('.dragbox').anypanel();
+	
+	
+	var something = $('.column').sortable({  
+		connectWith: '.column',
+		handle: 'h2',
+		cursor: 'move',
+		placeholder: 'placeholder',
+		forcePlaceholderSize: true,
+		opacity: 0.4,
+//the 'stop' below is to stop panel content flicker during drag, caused by mouseover effect for configuration options.
+		stop: function(event, ui){
+			$(ui.item).find('h2').click();
+			something.each(function(){console.log($(this).sortable( "toArray" ))})
+//			console.log(' -> here.');
+			}
+		}).disableSelection();
+//enables the configuration icons/text to show only on hover.
+/*
+$('.dragbox').each(function(){
+	$(this).hover(function(){  
+		$(this).find('h2').addClass('collapse');},function(){  $(this).find('h2').removeClass('collapse');  
+			}).find('h2').hover(function(){  
+		$(this).find('.configure').css('visibility', 'visible');  
+			}, function(){  
+		$(this).find('.configure').css('visibility', 'hidden');  
+			}).click(function(){  
+		$(this).siblings('.dragbox-content').toggle();  
+			}).end().find('.configure').css('visibility', 'hidden');  
+		});
+*/	})
+
+</script>
+
+</head>
+
+<body>
+
+<div id='mastHead' class='clearfix marginBottom'>
+	<div class='floatLeft'>AnyCommerce</div>
+	<div class='floatRight marginLeft'>your business</div>
+	<div class='floatRight marginLeft'>
+		<button>1</button>
+		<button>2</button>
+		<button>3</button>
+		<button>4</button>
+		<button>5</button>
+		<button>6</button>
+		<button>7</button>
+		<button>8</button>
+		<button>9</button>
+		<button>10</button>
+	</div>
+	
+</div>
+
+<div class="column" id="column1">  
+
+	<div class="dragbox" id="item1" >  
+		<h2>To Do List</h2>  
+		<div class="dragbox-content" >  
+			<!-- Panel Content Here -->   
+		</div>  
+	</div>  
+	
+	<div class="dragbox" id="item2" >  
+		<h2>Recent Support Tickets<span class="configure" ><a href="#" >Configure</a></span></h2>  
+		<div class="dragbox-content" >  
+			<!-- Panel Content Here -->  
+		</div>  
+	</div>  
+	
+	<div class="dragbox" id="item3" >  
+		<h2>Site Performance<span class="configure" ><a href="#" >Configure</a></span></h2>
+		<div class="dragbox-content" >  
+			<!-- Panel Content Here -->  
+		</div>  
+	</div>  
+
+
+	<div class="dragbox" id="syndicationBestSellers" >  
+		<h2>Best Sellers<span class="configure" ><a href="#" >Configure</a></span></h2>
+		<div class="dragbox-content" >  
+			<!-- Panel Content Here -->  
+		</div>  
+	</div>  
+
+
+</div>  
+
+
+<div class="column" id="column2" >  
+
+	<div class="dragbox" id="item4" >  
+		<h2>Today's Orders</h2>  
+		<div class="dragbox-content" >  
+			<!-- Panel Content Here-->  
+		</div>  
+	</div>
+
+	<div class="dragbox" id="item5" >  
+		<h2>Sales</h2>  
+		<div class="dragbox-content" >  
+			<!--Panel Content Here-->   
+		</div>  
+	</div>  
+
+</div> 
+
+
+
+<div class="column" id="column3" >
+	<div class="dragbox" id="item6" >  
+		<h2>Industry News</h2>  
+		<div class="dragbox-content" >  
+			<!-- Panel Content Here-->  
+		</div>  
+	</div>  
+	<div class="dragbox" id="item7" >  
+		<h2>anyCommerce Recent News</h2>  
+		<div class="dragbox-content" >  
+			<!--Panel Content Here-->   
+		</div>  
+	</div>
+	
+	<div>Non moveable banner</div>
+	
+</div>
+
+
+</body>
+</html>

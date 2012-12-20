@@ -1,0 +1,153 @@
+body,html	{font-size:100%;}
+
+
+
+
+
+/*
+loading class. add class to your templates if you want a loading graphic to appear while data is requested. add only to the parent element. 
+loadingBG classname is removed once template is rendered.
+note - wait should only be used in cases where the entire template is being reloaded. the class is NOT automatically removed ever.
+*/
+.loadingBG	{background:url(loading.gif) no-repeat center center; min-height:100px; min-width:100px;}
+li.loadingBG, .wait	{background:url(wait.gif) no-repeat top center; min-height:20px; min-width:20px;}
+span.wait	{display:inline-block;}
+
+
+
+
+/******* global styles - added for cross-browser uniformity or usability ******/
+
+img	{border:0; vertical-align: top; display:inline-block;} /* vertical-align: top; removes the whitespace sometimes added under an image.  */
+button {display:inline-block; margin: 0; padding: 0; cursor:pointer !important;}
+p	{margin-bottom:12px;}
+
+
+table {
+	border-collapse: collapse;
+	border-spacing: 0;
+	}
+td	{vertical-align:top;}
+td.valignMiddle	{vertical-align: middle;}
+
+
+
+/* feel free to delete these or override in your own .css file */
+h1, h2, h3, h4, h5, h6	{padding:0; margin:0;}
+p	{margin:0 0 12px 0;}
+
+/* chrome and safari add an outer border/glow to the input in focus. this removes it. */
+input:focus {
+	outline:none;
+	}
+
+
+button:focus	{outline:none;}
+button.ui-button	{padding:2px 12px !important;} /* jqueryui ui-button default class doesn't handle padding for 'button' elements. */
+
+
+
+
+
+/******* positioning *******/
+
+.floatLeft	{float:left;}
+.floatRight	{float:right;}
+
+.alignCenter	{text-align:center;}
+.alignLeft	{text-align:left;}
+.alignRight	{text-align:right;}
+
+.center	{margin:0 auto;}
+
+
+/****** aesthetics/usability ******/
+
+/* added to buttons (such as place order) when they're disabled to clearly indicate they should not be clicked again. */
+.disabled	{
+	cursor:crosshair !important;
+	filter: alpha(opacity=50);
+	opacity:0.5;
+	}
+
+.pointer	{cursor:pointer;}
+
+/* used when an element needs to start of hidden. this is used frequently. */
+.displayNone	{display:none;}
+
+.lineThrough	{text-decoration:line-through}
+.underline	{text-decoration:underline; cursor:pointer} /* only use this on clickable text */
+.borderNone	{border:none;}
+
+.clearfix	{clear:both;}
+.clearfix:after {
+    content: ".";
+    display: block;
+    height: 0;
+    clear: both;
+    visibility: hidden;
+	}
+	
+/* added to a piece of text once it becomed editable */
+.editable	{} /* put this on any editable field. */
+.editEnabled	{border:1px solid #ffcc00; min-width:25px; min-height:22px; width:200px; display:inline-block; padding:2px; margin-bottom:2px;} /* added to any editable field once editor is enabled. */
+.edited		{border:1px solid #390;} /* added if a field is changed */
+
+
+
+.marginLeft	{margin-left:12px;}
+.marginRight	{margin-right:12px;}
+.marginTop	{margin-top:12px;}
+.marginBottom	{margin-bottom:12px;}
+.stdMargin	{margin:12px;}
+
+
+
+/* header */
+
+#mastHead button	{width:60px; height:60px; margin-left:12px; float:left; background:#efefef; border:0;}
+#mastHead button:first-child	{margin-left:0;}
+
+
+
+
+
+
+
+/* three column panel layout (homepage) */
+.column{  
+	width:32%;  
+	margin-right:1%;  
+	min-height:300px;  
+	background:#fff;  
+	float:left;  
+	}  
+
+.column .dragbox{  
+	margin:5px 2px  20px;  
+	background:#fff;  
+	position:relative;  
+	}  
+
+.column .dragbox h2{  
+	margin:0;  
+	cursor:move;  
+	}  
+
+.dragbox-content{  
+	min-height:100px; 
+	}  
+
+.column  .placeholder{  
+	background: #f0f0f0;  
+	border:1px dashed #ddd;  
+	}  
+
+.dragbox h2.collapse{  
+	background:#f0f0f0 url('collapse.png') no-repeat top right;  
+	}  
+
+.dragbox h2 .configure{  
+	font-size:11px; font-weight:normal;  
+	margin-right:30px; float:right;  
+	}  
