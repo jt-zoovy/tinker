@@ -43,10 +43,6 @@ input:focus {
 
 
 button:focus	{outline:none;}
-button.ui-button	{padding:2px 12px !important;} /* jqueryui ui-button default class doesn't handle padding for 'button' elements. */
-
-
-
 
 
 /******* positioning *******/
@@ -147,7 +143,3 @@ button.ui-button	{padding:2px 12px !important;} /* jqueryui ui-button default cl
 	background:#f0f0f0 url('collapse.png') no-repeat top right;  
 	}  
 
-.dragbox h2 .configure{  
-	font-size:11px; font-weight:normal;  
-	margin-right:30px; float:right;  
-	}  

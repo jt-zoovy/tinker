@@ -10,36 +10,27 @@
 
 <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.8.2/jquery.min.js"></script>
 <script src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.9.0/jquery-ui.min.js"></script>
+<script src="anypanel.js"></script>
 
 <script type='text/javascript'>
 
+
+
+
+
+
+
 //http://www.jqplot.com/tests/pie-donut-charts.php
-
-
-
 //http://webdeveloperplus.com/jquery/collpasible-drag-drop-panels/
 $(document).ready(function(){
 
-
-var anypanel = {
-	_init : function(){
-		this.element.addClass('ui-widget');
-		this.element.children(":first").wrap($("<div \/>").addClass('ui-widget-header ui-corner-top')).css({'fontSize':'1em','padding':'12px;'});
-		this.element.children(":nth-child(2)").addClass('ui-widget-content ui-corner-bottom').css('borderTop','0');
-		},
-	options : {
-		state : 'open',
-		},
-	close : function(){this.element.find('.dragbox-content').hide(); this.options.state = 'close'},
-	open : function(){this.element.find('.dragbox-content').hide(); this.options.state = 'open'}
-	}
-
-	$.widget("ui.anypanel",anypanel); // create the widget
-
-
 	$('.dragbox').anypanel();
+	$('#syndicationBestSellers').anypanel('close');
+
+	$('#item4').anypanel('option','settingsMenu',{'do something':function(){alert('foo')}});
 	
-	
+	 
+
 	var something = $('.column').sortable({  
 		connectWith: '.column',
 		handle: 'h2',
@@ -54,6 +45,8 @@ var anypanel = {
 //			console.log(' -> here.');
 			}
 		}).disableSelection();
+		
+
 //enables the configuration icons/text to show only on hover.
 /*
 $('.dragbox').each(function(){
@@ -67,7 +60,10 @@ $('.dragbox').each(function(){
 		$(this).siblings('.dragbox-content').toggle();  
 			}).end().find('.configure').css('visibility', 'hidden');  
 		});
-*/	})
+*/	
+	
+	
+	})
 
 </script>
 
@@ -78,35 +74,30 @@ $('.dragbox').each(function(){
 
 <h1>Panel Widget</h1>
 
+
+<section class='clearfix'>
+
 <div class="column" id="column1">  
 
 	<div class="dragbox" id="item1" >  
 		<h2>To Do List</h2>  
-		<div class="dragbox-content" >  
-			<!-- Panel Content Here -->   
-		</div>  
+		<div></div>  
 	</div>  
 	
 	<div class="dragbox" id="item2" >  
-		<h2>Recent Support Tickets<span class="configure" ><a href="#" >Configure</a></span></h2>  
-		<div class="dragbox-content" >  
-			<!-- Panel Content Here -->  
-		</div>  
+		<h2>Recent Support Tickets</h2>  
+		<div></div>  
 	</div>  
 	
 	<div class="dragbox" id="item3" >  
-		<h2>Site Performance<span class="configure" ><a href="#" >Configure</a></span></h2>
-		<div class="dragbox-content" >  
-			<!-- Panel Content Here -->  
-		</div>  
+		<h2>Site Performance</h2>
+		<div></div> 
 	</div>  
 
 
 	<div class="dragbox" id="syndicationBestSellers" >  
-		<h2>Best Sellers<span class="configure" ><a href="#" >Configure</a></span></h2>
-		<div class="dragbox-content" >  
-			<!-- Panel Content Here -->  
-		</div>  
+		<h2>Best Sellers</h2>
+		<div></div> 
 	</div>  
 
 
@@ -117,14 +108,14 @@ $('.dragbox').each(function(){
 
 	<div class="dragbox" id="item4" >  
 		<h2>Today's Orders</h2>  
-		<div class="dragbox-content" >  
+		<div  >  
 			<!-- Panel Content Here-->  
 		</div>  
 	</div>
 
 	<div class="dragbox" id="item5" >  
 		<h2>Sales</h2>  
-		<div class="dragbox-content" >  
+		<div  >  
 			<!--Panel Content Here-->   
 		</div>  
 	</div>  
@@ -136,13 +127,13 @@ $('.dragbox').each(function(){
 <div class="column" id="column3" >
 	<div class="dragbox" id="item6" >  
 		<h2>Industry News</h2>  
-		<div class="dragbox-content" >  
+		<div  >  
 			<!-- Panel Content Here-->  
 		</div>  
 	</div>  
 	<div class="dragbox" id="item7" >  
 		<h2>anyCommerce Recent News</h2>  
-		<div class="dragbox-content" >  
+		<div  >  
 			<!--Panel Content Here-->   
 		</div>  
 	</div>
@@ -151,10 +142,12 @@ $('.dragbox').each(function(){
 	
 </div>
 
+</section>
 
 <hr />
 <ol>
 	<li>Panels should be created and be easily toggled on an off.</li>
+	<li>Disable toggle should be supported</li>
 	<li>They should be stateful.</li>
 	<li>They should contain an icon with a dropdown menu (settings).
 	<ol>
