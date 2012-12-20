@@ -1,3 +1,4 @@
+//http://net.tutsplus.com/tutorials/javascript-ajax/coding-your-first-jquery-ui-plugin/
 (function($) {
 	$.widget("ui.anypanel",{
 		options : {
