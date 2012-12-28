@@ -6,7 +6,6 @@
 			templateID : null, //what any commerce template to use to populate the panel.
 			data : {}, //what data to use to translate the panel.
 			call : null, //
-			extension : null, //
 			q : 'mutable', //which q to use.
 			settingsMenu : {}
 			},
@@ -88,7 +87,7 @@
 			
 			$ul.attr('data-ui-role','settingsMenu').hide().css({'position':'absolute','right':0,'zIndex':10000});
 			for(index in sm)	{
-				$("<li \/>").text(index).appendTo($ul);
+				$("<li \/>").text(index).on('click',sm[index]).appendTo($ul);
 				}
 			if($ul.children().length)	{
 				$ul.menu();
