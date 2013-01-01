@@ -4,18 +4,24 @@
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <title>Untitled Document</title>
 
-
-<link rel="stylesheet" type="text/css" href="http://ajax.googleapis.com/ajax/libs/jqueryui/1.8/themes/cupertino/jquery-ui.css" />
+<link href='http://fonts.googleapis.com/css?family=PT+Sans' rel='stylesheet' type='text/css'>
+<!--
+http://jqueryui.com/themeroller/#ffDefault=%27PT+Sans%27%2Ctahoma%2CArial%2Csans-serif&fwDefault=normal&fsDefault=1.0em&cornerRadius=5px&bgColorHeader=e6e6e6&bgTextureHeader=02_glass.png&bgImgOpacityHeader=100&borderColorHeader=c8cacb&fcHeader=565656&iconColorHeader=21444f&bgColorContent=ffffff&bgTextureContent=01_flat.png&bgImgOpacityContent=75&borderColorContent=c8cacb&fcContent=5656&iconColorContent=565656&bgColorDefault=c0d2d8&bgTextureDefault=02_glass.png&bgImgOpacityDefault=100&borderColorDefault=b0c3cb&fcDefault=21444f&iconColorDefault=21444f&bgColorHover=254751&bgTextureHover=02_glass.png&bgImgOpacityHover=75&borderColorHover=12303a&fcHover=ffffff&iconColorHover=ffffff&bgColorActive=f5f5f5&bgTextureActive=02_glass.png&bgImgOpacityActive=100&borderColorActive=c8cacb&fcActive=565656&iconColorActive=565656&bgColorHighlight=ffffea&bgTextureHighlight=02_glass.png&bgImgOpacityHighlight=55&borderColorHighlight=fcefa1&fcHighlight=565656&iconColorHighlight=21444f&bgColorError=fef1ec&bgTextureError=08_diagonals_thick.png&bgImgOpacityError=60&borderColorError=cd0a0a&fcError=660000&iconColorError=cc0000&bgColorOverlay=aaaaaa&bgTextureOverlay=08_diagonals_thick.png&bgImgOpacityOverlay=45&opacityOverlay=30&bgColorShadow=aaaaaa&bgTextureShadow=01_flat.png&bgImgOpacityShadow=0&opacityShadow=30&thicknessShadow=8px&offsetTopShadow=-8px&offsetLeftShadow=-8px&cornerRadiusShadow=8px
+-->
+<link rel="stylesheet" type="text/css" href="jquery-ui-1.9.2.custom.min.css"/>
 <link rel="stylesheet" type="text/css" href="https://www.zoovy.com/biz/app/extensions/admin/styles.css" />
 
-<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.8.2/jquery.min.js"></script>
-<script src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.9.0/jquery-ui.min.js"></script>
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>
+<script src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.9.2/jquery-ui.min.js"></script>
 <script src="anypanel.js"></script>
 
 
 <style type='text/css'>
 body	{margin:0; padding:0; background:#e2e3e5;}
-body, html	{font-size:100%; font-family:Tahoma, Geneva, sans-serif; color:#333333;}
+body, html	{font-size:100%; font-family:Tahoma, Geneva, sans-serif; color:#565656;}
+
+a	{color:#21444f;}
+a:hover	{color:#000000;}
 
 #mastHead .logo	{float:left; margin-left:12px;}
 #mastHead .menu	{float:right; margin-right:12px; color:#ffffff; padding-top:8px; font-size:.8em;}
@@ -23,9 +29,10 @@ body, html	{font-size:100%; font-family:Tahoma, Geneva, sans-serif; color:#33333
 .headerTop	{background:#757779; height:40px;}
 
 .headerTabs	{background:#b7b9bb;}
-.headerTabs ul	{width:100%; padding:0; margin:0; border-bottom:1px solid #ededed; display:inline-block;}
-.headerTabs li	{display:block; float:left; list-style:none;border-right:1px solid #ededed; width:7%; padding:0 4px; margin:0; font-size:.75em; position:relative; color:#ffffff;}
+.headerTabs ul	{width:100%; padding:0; margin:0; display:inline-block;}
+.headerTabs li	{display:block; float:left; list-style:none;border-right:1px solid #ededed; width:8%; padding:0 4px; margin:0; font-size:.75em; position:relative; color:#ffffff; cursor:pointer;}
 .headerTabs li:hover	{background:#005e86;}
+.headerTabs li.active, #navTabs	{background:#c0d2d8; color:#565656;}
 .headerTabs .toggleArrow	{width:1%;}
 
 .headerTabs ul.showIcons .icon	{display:block; float:right;}
@@ -56,16 +63,28 @@ body, html	{font-size:100%; font-family:Tahoma, Geneva, sans-serif; color:#33333
 	border:1px solid #ffffff;
 	-webkit-box-shadow:  1px 1px 1px 1px rgba(0, 0, 0, .3);
 	box-shadow:  1px 1px 1px 1px rgba(0, 0, 0, .3);
-background: #fcfcfc; /* Old browsers */
-background: -moz-radial-gradient(center, ellipse cover,  #fcfcfc 0%, #b74040 4%, #cc0000 100%); /* FF3.6+ */
-background: -webkit-gradient(radial, center center, 0px, center center, 100%, color-stop(0%,#fcfcfc), color-stop(4%,#b74040), color-stop(100%,#cc0000)); /* Chrome,Safari4+ */
-background: -webkit-radial-gradient(center, ellipse cover,  #fcfcfc 0%,#b74040 4%,#cc0000 100%); /* Chrome10+,Safari5.1+ */
-background: -o-radial-gradient(center, ellipse cover,  #fcfcfc 0%,#b74040 4%,#cc0000 100%); /* Opera 12+ */
-background: -ms-radial-gradient(center, ellipse cover,  #fcfcfc 0%,#b74040 4%,#cc0000 100%); /* IE10+ */
-background: radial-gradient(ellipse at center,  #fcfcfc 0%,#b74040 4%,#cc0000 100%); /* W3C */
-filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#fcfcfc', endColorstr='#cc0000',GradientType=1 ); /* IE6-9 fallback on horizontal gradient */
+	background: #fcfcfc; /* Old browsers */
+	background: -moz-radial-gradient(center, ellipse cover,  #fcfcfc 0%, #b74040 4%, #cc0000 100%); /* FF3.6+ */
+	background: -webkit-gradient(radial, center center, 0px, center center, 100%, color-stop(0%,#fcfcfc), color-stop(4%,#b74040), color-stop(100%,#cc0000)); /* Chrome,Safari4+ */
+	background: -webkit-radial-gradient(center, ellipse cover,  #fcfcfc 0%,#b74040 4%,#cc0000 100%); /* Chrome10+,Safari5.1+ */
+	background: -o-radial-gradient(center, ellipse cover,  #fcfcfc 0%,#b74040 4%,#cc0000 100%); /* Opera 12+ */
+	background: -ms-radial-gradient(center, ellipse cover,  #fcfcfc 0%,#b74040 4%,#cc0000 100%); /* IE10+ */
+	background: radial-gradient(ellipse at center,  #fcfcfc 0%,#b74040 4%,#cc0000 100%); /* W3C */
+	filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#fcfcfc', endColorstr='#cc0000',GradientType=1 ); /* IE6-9 fallback on horizontal gradient */
 
 	}
+
+#navTabs	{text-align:center; font-size:.75em; line-height:1.7em;}
+#navTabs a	{padding:0px 12px; text-decoration:none;}
+#navTabs a:hover	{text-decoration:underline;}
+
+#breadcrumb	{border-bottom:1px solid #ededed;}
+
+@media screen and (max-width: 1000px) {
+/* changing to 7% keeps list from line-wrapping. */
+	.headerTabs li	{width:7.5%;}
+	}
+
 
 </style>
 
@@ -88,6 +107,8 @@ function toggleHeaderTabs(iconState)	{
 		r = false;
 		}
 	}
+
+
 </script>
 
 </head>
@@ -97,19 +118,19 @@ function toggleHeaderTabs(iconState)	{
 <div id='mastHead'>
 
 	<div class='clearfix headerTop'>
-		<div class='logo'>Logo</div>
+		<div class='logo pointer' onClick="showUI('/biz/recent.cgi');" title='home'>Logo</div>
 		<div class='menu'>
-		Contact | 
-		Exit
-		<span class='marginLeft'>O</span>
+		<span class='pointer' onClick="return navigateTo('/biz/downloads/index.cgi');" title='Use our windows clients for managing orders and product'>Downloads</span> |
+		<span class='pointer' onClick="return navigateTo('#!taskManager');" title='view and edit your task list'>Tasks</span> | 
+		<span class='pointer' onClick="app.ext.admin.a.logout(); return false;" title='log out of your account' >Exit</span>
 		</div>
 	</div>
 
 	<div class='clearfix headerTabs'>
 	<ul class='showIcons'>
-		<li class='toggleArrow' onClick="toggleHeaderTabs()">&#9650;</li>
+		<li class='toggleArrow' onClick="toggleHeaderTabs()" title='Toggle this menu to be taller or shorter'>&#9650;</li>
 		<li class='setupTab' onClick="navigateTo('setup'); return false;"><span class='text'>Setup</span><span class='icon'></span></li>
-		<li class='sitesTab' onClick="navigateTo('sites'); return false;"><span class='text'>Sites</span><span class='icon'></span></li>
+		<li class='sitesTab active' onClick="navigateTo('sites'); return false;"><span class='text'>Sites</span><span class='icon'></span></li>
 		<li class='productsTab' onClick="navigateTo('products'); return false;"><span class='text'>Products</span><span class='icon'></span></li>
 		<li class='ordersTab' onClick="navigateTo('orders'); return false;"><span class='text'>Orders</span><span class='icon'></span></li>
 		<li class='crmTab' onClick="navigateTo('crm'); return false;"><span class='text'>CRM</span><span class='icon'></span></li>
@@ -121,7 +142,8 @@ function toggleHeaderTabs(iconState)	{
 		<li class='messagesTab' onClick="navigateTo('messages'); return false;"><span class='text'>Messages</span><span class='messageCount'>12</span></li>
 	</ul>
 	</div>
-
+	<div id='navTabs'><a href='#'>link</a>  | <a href='#'>link</a></div>
+	<div id='breadcrumb'></div>
 </div>
 
 </body>
