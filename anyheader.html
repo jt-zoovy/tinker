@@ -1,0 +1,128 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>Untitled Document</title>
+
+
+<link rel="stylesheet" type="text/css" href="http://ajax.googleapis.com/ajax/libs/jqueryui/1.8/themes/cupertino/jquery-ui.css" />
+<link rel="stylesheet" type="text/css" href="https://www.zoovy.com/biz/app/extensions/admin/styles.css" />
+
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.8.2/jquery.min.js"></script>
+<script src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.9.0/jquery-ui.min.js"></script>
+<script src="anypanel.js"></script>
+
+
+<style type='text/css'>
+body	{margin:0; padding:0; background:#e2e3e5;}
+body, html	{font-size:100%; font-family:Tahoma, Geneva, sans-serif; color:#333333;}
+
+#mastHead .logo	{float:left; margin-left:12px;}
+#mastHead .menu	{float:right; margin-right:12px; color:#ffffff; padding-top:8px; font-size:.8em;}
+/* the row with the logo and text links */
+.headerTop	{background:#757779; height:40px;}
+
+.headerTabs	{background:#b7b9bb;}
+.headerTabs ul	{width:100%; padding:0; margin:0; border-bottom:1px solid #ededed; display:inline-block;}
+.headerTabs li	{display:block; float:left; list-style:none;border-right:1px solid #ededed; width:7%; padding:0 4px; margin:0; font-size:.75em; position:relative; color:#ffffff;}
+.headerTabs li:hover	{background:#005e86;}
+.headerTabs .toggleArrow	{width:1%;}
+
+.headerTabs ul.showIcons .icon	{display:block; float:right;}
+.headerTabs ul.showIcons li	{height:55px;}
+.headerTabs ul.hideIcons .icon	{display:none;}
+.headerTabs ul.hideIcons li	{height:20px;}
+
+.headerTabs .text	{position:relative; z-index:10;}
+.headerTabs .icon	{background-image:url(images/tab_sprites-1000x250.png); background-repeat:no-repeat; position:absolute; bottom:0; right:0; height:55px; width:55px; z-index:9;}
+.headerTabs .setupTab .icon	{} /* uses default position 0,0 */
+.headerTabs .sitesTab .icon	{background-position: -55px 0;}
+.headerTabs .productsTab .icon	{background-position: -110px 0;}
+.headerTabs .ordersTab .icon	{background-position: -165px 0;}
+.headerTabs .crmTab .icon	{background-position: -220px 0;}
+.headerTabs .syndicationTab .icon	{background-position: -275px 0;}
+.headerTabs .reportsTab .icon	{background-position: -330px 0;}
+.headerTabs .kpiTab .icon	{background-position: -385px 0;}
+.headerTabs .utilitiesTab .icon	{background-position: -440px 0;}
+.headerTabs .supportTab .icon	{background-position: -495px 0;}
+
+.headerTabs .messageCount	{
+	color:#ffffff; font-size:12px; font-weight:normal; line-height:18px;
+	display:block; position:absolute; top:-2px; right:-8px; 
+	height:20px; width:20px;
+	-webkit-border-radius: 10px;
+	border-radius: 10px;
+	text-align:center;
+	border:1px solid #ffffff;
+	-webkit-box-shadow:  1px 1px 1px 1px rgba(0, 0, 0, .3);
+	box-shadow:  1px 1px 1px 1px rgba(0, 0, 0, .3);
+background: #fcfcfc; /* Old browsers */
+background: -moz-radial-gradient(center, ellipse cover,  #fcfcfc 0%, #b74040 4%, #cc0000 100%); /* FF3.6+ */
+background: -webkit-gradient(radial, center center, 0px, center center, 100%, color-stop(0%,#fcfcfc), color-stop(4%,#b74040), color-stop(100%,#cc0000)); /* Chrome,Safari4+ */
+background: -webkit-radial-gradient(center, ellipse cover,  #fcfcfc 0%,#b74040 4%,#cc0000 100%); /* Chrome10+,Safari5.1+ */
+background: -o-radial-gradient(center, ellipse cover,  #fcfcfc 0%,#b74040 4%,#cc0000 100%); /* Opera 12+ */
+background: -ms-radial-gradient(center, ellipse cover,  #fcfcfc 0%,#b74040 4%,#cc0000 100%); /* IE10+ */
+background: radial-gradient(ellipse at center,  #fcfcfc 0%,#b74040 4%,#cc0000 100%); /* W3C */
+filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#fcfcfc', endColorstr='#cc0000',GradientType=1 ); /* IE6-9 fallback on horizontal gradient */
+
+	}
+
+</style>
+
+
+<script type='text/javascript'>
+// iconState is optional. if defined, will show or hide icons based on value (show or hide).
+// if iconState is not defined, then the function behaves like a toggle.
+// the value returned is boolen. t for icons are showing and f for icons are hidden.
+function toggleHeaderTabs(iconState)	{
+	var $target = $('.headerTabs ul','#mastHead'),
+	r;
+	if(iconState == 'show' || $target.hasClass('hideIcons'))	{
+		$('.toggleArrow').html("&#9650;");
+		$target.removeClass('hideIcons').addClass('showIcons');
+		r = true;
+		}
+	else	{
+		$('.toggleArrow').html("&#9660;");
+		$target.removeClass('showIcons').addClass('hideIcons');
+		r = false;
+		}
+	}
+</script>
+
+</head>
+
+<body>
+
+<div id='mastHead'>
+
+	<div class='clearfix headerTop'>
+		<div class='logo'>Logo</div>
+		<div class='menu'>
+		Contact | 
+		Exit
+		<span class='marginLeft'>O</span>
+		</div>
+	</div>
+
+	<div class='clearfix headerTabs'>
+	<ul class='showIcons'>
+		<li class='toggleArrow' onClick="toggleHeaderTabs()">&#9650;</li>
+		<li class='setupTab' onClick="navigateTo('setup'); return false;"><span class='text'>Setup</span><span class='icon'></span></li>
+		<li class='sitesTab' onClick="navigateTo('sites'); return false;"><span class='text'>Sites</span><span class='icon'></span></li>
+		<li class='productsTab' onClick="navigateTo('products'); return false;"><span class='text'>Products</span><span class='icon'></span></li>
+		<li class='ordersTab' onClick="navigateTo('orders'); return false;"><span class='text'>Orders</span><span class='icon'></span></li>
+		<li class='crmTab' onClick="navigateTo('crm'); return false;"><span class='text'>CRM</span><span class='icon'></span></li>
+		<li class='syndicationTab' onClick="navigateTo('syndication'); return false;"><span class='text'>Syndication</span><span class='icon'></span></li>
+		<li class='reportsTab' onClick="navigateTo('reports'); return false;"><span class='text'>Reports</span><span class='icon'></span></li>
+		<li class='kpiTab' onClick="navigateTo('kpi'); return false;"><span class='text'>KPI</span><span class='icon'></span></li>
+		<li class='utilitiesTab' onClick="navigateTo('utilities'); return false;"><span class='text'>Utilities</span><span class='icon'></span></li>
+		<li class='supportTab' onClick="navigateTo('support'); return false;"><span class='text'>Support</span><span class='icon'></span></li>
+		<li class='messagesTab' onClick="navigateTo('messages'); return false;"><span class='text'>Messages</span><span class='messageCount'>12</span></li>
+	</ul>
+	</div>
+
+</div>
+
+</body>
+</html>
