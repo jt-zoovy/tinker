@@ -23,13 +23,14 @@ body, html	{font-size:100%; font-family:Tahoma, Geneva, sans-serif; color:#56565
 a	{color:#21444f;}
 a:hover	{color:#000000;}
 
+#mastHead	{position:relative;}
 #mastHead .logo	{float:left; margin-left:12px;}
 #mastHead .menu	{float:right; margin-right:12px; color:#ffffff; padding-top:8px; font-size:.8em;}
 /* the row with the logo and text links */
 .headerTop	{background:#757779; height:40px;}
 
-.headerTabs	{background:#b7b9bb;}
-.headerTabs ul	{width:100%; padding:0; margin:0; display:inline-block;}
+.headerTabs	{background:#b7b9bb; position:relative;}
+.headerTabs ul	{width:100%; padding:0; margin:0; display:inline-block; position:relative; z-index:100;}
 .headerTabs li	{display:block; float:left; list-style:none;border-right:1px solid #ededed; width:8%; padding:0 4px; margin:0; font-size:.75em; position:relative; color:#ffffff; cursor:pointer;}
 .headerTabs li:hover	{background:#005e86;}
 .headerTabs li.active, #navTabs	{background:#c0d2d8; color:#565656;}
@@ -55,7 +56,8 @@ a:hover	{color:#000000;}
 
 .headerTabs .messageCount	{
 	color:#ffffff; font-size:12px; font-weight:normal; line-height:18px;
-	display:block; position:absolute; top:-2px; right:-8px; 
+	display:block; position:absolute; top:-2px; right:-8px;
+	z-index:110;
 	height:20px; width:20px;
 	-webkit-border-radius: 10px;
 	border-radius: 10px;
@@ -79,6 +81,9 @@ a:hover	{color:#000000;}
 #navTabs a:hover	{text-decoration:underline;}
 
 #breadcrumb	{border-bottom:1px solid #ededed;}
+
+.headerTabs li.messagesTab:hover, #messagesContent	{background:#565656;}
+#messagesContent	{position:absolute; top:65px; left:0; right:0; height:200px;  z-index:99;}
 
 @media screen and (max-width: 1000px) {
 /* changing to 7% keeps list from line-wrapping. */
@@ -106,9 +111,26 @@ function toggleHeaderTabs(iconState)	{
 		$target.removeClass('showIcons').addClass('hideIcons');
 		r = false;
 		}
+//if the messages pane is open, adjust it's position accordingly.
+	if($('#messagesContent').is(':visible'))	{
+		$('#messagesContent').css('top',$('#messagesContent').parent().height());
+		}
+	return r;
 	}
 
+//state can be forced 'show' or 'hide' or, if left blank, defaults to toggle.
 
+function handleMessagePane(state)	{
+	$target = $('#messagesContent');
+	$target.css('top',$target.parent().height()); //positions messages pane directly below tab bar, regardless of tab bar height.
+	console.log($target.css('display'))
+	if(state == 'show' || $target.css('display') == 'none')	{
+		$target.slideDown();
+		}
+	else	{
+		$target.slideUp();
+		}
+	}
 </script>
 
 </head>
@@ -129,21 +151,45 @@ function toggleHeaderTabs(iconState)	{
 	<div class='clearfix headerTabs'>
 	<ul class='showIcons'>
 		<li class='toggleArrow' onClick="toggleHeaderTabs()" title='Toggle this menu to be taller or shorter'>&#9650;</li>
-		<li class='setupTab' onClick="navigateTo('setup'); return false;"><span class='text'>Setup</span><span class='icon'></span></li>
-		<li class='sitesTab active' onClick="navigateTo('sites'); return false;"><span class='text'>Sites</span><span class='icon'></span></li>
-		<li class='productsTab' onClick="navigateTo('products'); return false;"><span class='text'>Products</span><span class='icon'></span></li>
-		<li class='ordersTab' onClick="navigateTo('orders'); return false;"><span class='text'>Orders</span><span class='icon'></span></li>
-		<li class='crmTab' onClick="navigateTo('crm'); return false;"><span class='text'>CRM</span><span class='icon'></span></li>
-		<li class='syndicationTab' onClick="navigateTo('syndication'); return false;"><span class='text'>Syndication</span><span class='icon'></span></li>
-		<li class='reportsTab' onClick="navigateTo('reports'); return false;"><span class='text'>Reports</span><span class='icon'></span></li>
-		<li class='kpiTab' onClick="navigateTo('kpi'); return false;"><span class='text'>KPI</span><span class='icon'></span></li>
-		<li class='utilitiesTab' onClick="navigateTo('utilities'); return false;"><span class='text'>Utilities</span><span class='icon'></span></li>
-		<li class='supportTab' onClick="navigateTo('support'); return false;"><span class='text'>Support</span><span class='icon'></span></li>
-		<li class='messagesTab' onClick="navigateTo('messages'); return false;"><span class='text'>Messages</span><span class='messageCount'>12</span></li>
+		<li class='setupTab' onClick="handleMessagePane('hide'); navigateTo('setup'); return false;"><span class='text'>Setup</span><span class='icon'></span></li>
+		<li class='sitesTab active' onClick="handleMessagePane('hide'); navigateTo('sites'); return false;"><span class='text'>Sites</span><span class='icon'></span></li>
+		<li class='productsTab' onClick="handleMessagePane('hide'); navigateTo('products'); return false;"><span class='text'>Products</span><span class='icon'></span></li>
+		<li class='ordersTab' onClick="handleMessagePane('hide'); navigateTo('orders'); return false;"><span class='text'>Orders</span><span class='icon'></span></li>
+		<li class='crmTab' onClick="handleMessagePane('hide'); navigateTo('crm'); return false;"><span class='text'>CRM</span><span class='icon'></span></li>
+		<li class='syndicationTab' onClick="handleMessagePane('hide'); navigateTo('syndication'); return false;"><span class='text'>Syndication</span><span class='icon'></span></li>
+		<li class='reportsTab' onClick="handleMessagePane('hide'); navigateTo('reports'); return false;"><span class='text'>Reports</span><span class='icon'></span></li>
+		<li class='kpiTab' onClick="handleMessagePane('hide'); navigateTo('kpi'); return false;"><span class='text'>KPI</span><span class='icon'></span></li>
+		<li class='utilitiesTab' onClick="handleMessagePane('hide'); navigateTo('utilities'); return false;"><span class='text'>Utilities</span><span class='icon'></span></li>
+		<li class='supportTab' onClick="handleMessagePane('hide'); navigateTo('support'); return false;"><span class='text'>Support</span><span class='icon'></span></li>
+		<li class='messagesTab' onClick="handleMessagePane();"><span class='text'>Messages</span><span class='messageCount'>12</span></li>
 	</ul>
+	<div id='messagesContent' class='displayNone'></div>
 	</div>
 	<div id='navTabs'><a href='#'>link</a>  | <a href='#'>link</a></div>
 	<div id='breadcrumb'></div>
+</div>
+
+
+<div class='positionRelative'>
+
+
+	<div id='globalMessaging' class='appMessaging'></div>
+
+	
+
+
+	<div id='homeContent' class='displayNone tabContent' data-section='home'></div><!-- home acts as a default as well -->
+	<div id='setupContent' class='displayNone tabContent' data-section='setup'></div>
+	<div id='sitesContent' class='displayNone tabContent' data-section='sites'></div>
+	<div id='productContent' class='displayNone tabContent' data-section='product'></div>
+	<div id='ordersContent' class='displayNone tabContent' data-section='orders'></div>
+	<div id='crmContent' class='displayNone tabContent' data-section='crm'></div>
+	<div id='syndicationContent' class='displayNone tabContent' data-section='syndication'></div>
+	<div id='reportsContent' class='displayNone tabContent' data-section='reports'></div>
+	<div id='kpiContent' class='displayNone tabContent' data-section='kpi'></div>
+	<div id='utilitiesContent' class='displayNone tabContent' data-section='utilities'></div>
+	<div id='jtContent' class='displayNone tabContent' data-section='jt'></div><!-- for testing -->
+
 </div>
 
 </body>
