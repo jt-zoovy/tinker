@@ -82,7 +82,7 @@ a:hover	{color:#000000;}
 
 #breadcrumb	{border-bottom:1px solid #ededed;}
 
-.headerTabs li.messagesTab:hover, #messagesContent	{background:#565656;}
+.headerTabs li.messagesTab:hover, #messagesContent, .headerTabs li.messagesTabActive	{background:#565656 !important;}
 #messagesContent	{position:absolute; top:65px; left:0; right:0; height:200px;  z-index:99;}
 
 @media screen and (max-width: 1000px) {
@@ -126,9 +126,11 @@ function handleMessagePane(state)	{
 	console.log($target.css('display'))
 	if(state == 'show' || $target.css('display') == 'none')	{
 		$target.slideDown();
+		$('.messagesTab').addClass('messagesTabActive');
 		}
 	else	{
 		$target.slideUp();
+		$('.messagesTab').removeClass('messagesTabActive');
 		}
 	}
 </script>
