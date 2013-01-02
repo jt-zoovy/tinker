@@ -5,9 +5,6 @@
 <title>Untitled Document</title>
 
 <link href='http://fonts.googleapis.com/css?family=PT+Sans' rel='stylesheet' type='text/css'>
-<!--
-http://jqueryui.com/themeroller/#ffDefault=%27PT+Sans%27%2Ctahoma%2CArial%2Csans-serif&fwDefault=normal&fsDefault=1.0em&cornerRadius=5px&bgColorHeader=e6e6e6&bgTextureHeader=02_glass.png&bgImgOpacityHeader=100&borderColorHeader=c8cacb&fcHeader=565656&iconColorHeader=21444f&bgColorContent=ffffff&bgTextureContent=01_flat.png&bgImgOpacityContent=75&borderColorContent=c8cacb&fcContent=5656&iconColorContent=565656&bgColorDefault=c0d2d8&bgTextureDefault=02_glass.png&bgImgOpacityDefault=100&borderColorDefault=b0c3cb&fcDefault=21444f&iconColorDefault=21444f&bgColorHover=254751&bgTextureHover=02_glass.png&bgImgOpacityHover=75&borderColorHover=12303a&fcHover=ffffff&iconColorHover=ffffff&bgColorActive=f5f5f5&bgTextureActive=02_glass.png&bgImgOpacityActive=100&borderColorActive=c8cacb&fcActive=565656&iconColorActive=565656&bgColorHighlight=ffffea&bgTextureHighlight=02_glass.png&bgImgOpacityHighlight=55&borderColorHighlight=fcefa1&fcHighlight=565656&iconColorHighlight=21444f&bgColorError=fef1ec&bgTextureError=08_diagonals_thick.png&bgImgOpacityError=60&borderColorError=cd0a0a&fcError=660000&iconColorError=cc0000&bgColorOverlay=aaaaaa&bgTextureOverlay=08_diagonals_thick.png&bgImgOpacityOverlay=45&opacityOverlay=30&bgColorShadow=aaaaaa&bgTextureShadow=01_flat.png&bgImgOpacityShadow=0&opacityShadow=30&thicknessShadow=8px&offsetTopShadow=-8px&offsetLeftShadow=-8px&cornerRadiusShadow=8px
--->
 <link rel="stylesheet" type="text/css" href="jquery-ui-1.9.2.custom.min.css"/>
 <link rel="stylesheet" type="text/css" href="https://www.zoovy.com/biz/app/extensions/admin/styles.css" />
 
@@ -24,39 +21,53 @@ a	{color:#21444f;}
 a:hover	{color:#000000;}
 
 #mastHead	{position:relative;}
-#mastHead .logo	{float:left; margin-left:12px;}
-#mastHead .menu	{float:right; margin-right:12px; color:#ffffff; padding-top:8px; font-size:.8em;}
+#mastHead .logo	{float:left; margin-left:12px; margin-top:5px;}
+#mastHead .menu	{float:right; margin-right:12px;  }
 /* the row with the logo and text links */
-.headerTop	{background:#757779; height:40px;}
+.headerTop	{background:#b7b9bb; height:40px; line-height:40px; font-size:.8em; color:#565656;}
 
-.headerTabs	{background:#b7b9bb; position:relative;}
-.headerTabs ul	{width:100%; padding:0; margin:0; display:inline-block; position:relative; z-index:100;}
-.headerTabs li	{display:block; float:left; list-style:none;border-right:1px solid #ededed; width:8%; padding:0 4px; margin:0; font-size:.75em; position:relative; color:#ffffff; cursor:pointer;}
-.headerTabs li:hover	{background:#005e86;}
-.headerTabs li.active, #navTabs	{background:#c0d2d8; color:#565656;}
-.headerTabs .toggleArrow	{width:1%;}
+.mhTabsContainer	{background:#757779; position:relative;}
+.mhTabsContainer ul	{width:100%; padding:0; margin:0; display:inline-block; position:relative; z-index:100;}
+.mhTabsContainer li	{display:block; float:left; list-style:none;border-right:1px solid #ededed; width:8%; padding:1px 4px 0 4px; margin:0; font-size:.75em; position:relative; color:#ffffff; cursor:pointer;}
+.mhTabsContainer li:last-child	{border-right:0px;}
+.mhTabsContainer li:hover	{background:#005e86;}
+.mhTabsContainer li.active, #navTabs	{background:#c0d2d8; color:#565656;}
+.mhTabsContainer .toggleArrow	{width:1%;}
 
-.headerTabs ul.showIcons .icon	{display:block; float:right;}
-.headerTabs ul.showIcons li	{height:55px;}
-.headerTabs ul.hideIcons .icon	{display:none;}
-.headerTabs ul.hideIcons li	{height:20px;}
+.mhTabsContainer ul.showIcons .icon	{display:block; float:right;}
+.mhTabsContainer ul.showIcons li	{height:55px;}
+.mhTabsContainer ul.hideIcons .icon	{display:none;}
+.mhTabsContainer ul.hideIcons li	{height:20px;}
 
-.headerTabs .text	{position:relative; z-index:10;}
-.headerTabs .icon	{background-image:url(images/tab_sprites-1000x250.png); background-repeat:no-repeat; position:absolute; bottom:0; right:0; height:55px; width:55px; z-index:9;}
-.headerTabs .setupTab .icon	{} /* uses default position 0,0 */
-.headerTabs .sitesTab .icon	{background-position: -55px 0;}
-.headerTabs .productsTab .icon	{background-position: -110px 0;}
-.headerTabs .ordersTab .icon	{background-position: -165px 0;}
-.headerTabs .crmTab .icon	{background-position: -220px 0;}
-.headerTabs .syndicationTab .icon	{background-position: -275px 0;}
-.headerTabs .reportsTab .icon	{background-position: -330px 0;}
-.headerTabs .kpiTab .icon	{background-position: -385px 0;}
-.headerTabs .utilitiesTab .icon	{background-position: -440px 0;}
-.headerTabs .supportTab .icon	{background-position: -495px 0;}
+.mhTabsContainer .text	{position:relative; z-index:10;}
+.mhTabsContainer .icon	{background-image:url(images/tab_sprites-1000x250.png); background-repeat:no-repeat; position:absolute; bottom:0; right:0; height:55px; width:55px; z-index:9;}
+.mhTabsContainer .setupTab .icon	{} /* uses default position 0,0 */
+.mhTabsContainer .sitesTab .icon	{background-position: -55px 0;}
+.mhTabsContainer .productsTab .icon	{background-position: -110px 0;}
+.mhTabsContainer .ordersTab .icon	{background-position: -165px 0;}
+.mhTabsContainer .crmTab .icon	{background-position: -220px 0;}
+.mhTabsContainer .syndicationTab .icon	{background-position: -275px 0;}
+.mhTabsContainer .reportsTab .icon	{background-position: -330px 0;}
+.mhTabsContainer .kpiTab .icon	{background-position: -385px 0;}
+.mhTabsContainer .utilitiesTab .icon	{background-position: -440px 0;}
+.mhTabsContainer .supportTab .icon	{background-position: -495px 0;}
 
-.headerTabs .messageCount	{
+
+.mhTabsContainer .setupTab.active .icon	{background-position: 0px -55px;} /* uses default position 0,0 */
+.mhTabsContainer .sitesTab.active .icon	{background-position: -55px -55px;}
+.mhTabsContainer .productsTab.active .icon	{background-position: -110px -55px;}
+.mhTabsContainer .ordersTab.active .icon	{background-position: -165px -55px;}
+.mhTabsContainer .crmTab.active .icon	{background-position: -220px -55px;}
+.mhTabsContainer .syndicationTab.active .icon	{background-position: -275px -55px;}
+.mhTabsContainer .reportsTab.active .icon	{background-position: -330px -55px;}
+.mhTabsContainer .kpiTab.active .icon	{background-position: -385px -55px;}
+.mhTabsContainer .utilitiesTab.active .icon	{background-position: -440px -55px;}
+.mhTabsContainer .supportTab.active .icon	{background-position: -495px -55px;}
+
+
+.mhTabsContainer .messageCount	{
 	color:#ffffff; font-size:12px; font-weight:normal; line-height:18px;
-	display:block; position:absolute; top:-2px; right:-8px;
+	display:block; position:absolute; top:-2px; right:-3px;
 	z-index:110;
 	height:20px; width:20px;
 	-webkit-border-radius: 10px;
@@ -82,12 +93,12 @@ a:hover	{color:#000000;}
 
 #breadcrumb	{border-bottom:1px solid #ededed;}
 
-.headerTabs li.messagesTab:hover, #messagesContent, .headerTabs li.messagesTabActive	{background:#565656 !important;}
+.mhTabsContainer li.messagesTab:hover, #messagesContent, .mhTabsContainer li.messagesTabActive	{background:#565656 !important;}
 #messagesContent	{position:absolute; top:65px; left:0; right:0; height:200px;  z-index:99;}
 
 @media screen and (max-width: 1000px) {
 /* changing to 7% keeps list from line-wrapping. */
-	.headerTabs li	{width:7.5%;}
+	.mhTabsContainer li	{width:7.5%;}
 	}
 
 
@@ -99,7 +110,7 @@ a:hover	{color:#000000;}
 // if iconState is not defined, then the function behaves like a toggle.
 // the value returned is boolen. t for icons are showing and f for icons are hidden.
 function toggleHeaderTabs(iconState)	{
-	var $target = $('.headerTabs ul','#mastHead'),
+	var $target = $('.mhTabsContainer ul','#mastHead'),
 	r;
 	if(iconState == 'show' || $target.hasClass('hideIcons'))	{
 		$('.toggleArrow').html("&#9650;");
@@ -118,13 +129,33 @@ function toggleHeaderTabs(iconState)	{
 	return r;
 	}
 
+
+function handleMHTabs(tab)	{
+	if(tab)	{
+		$('.mhTabsContainer ul','#mastHead').children().removeClass('active'); //strip active class from all other tabs.
+		if(tab == 'messages')	{
+			handleMessagePane(); //message tab is handled separately.
+			}
+		else	{
+			$('.'+tab+'Tab','#mastHead').addClass('active'); ///!!! need to put this into a jqSelector function !!!
+			handleMessagePane('hide'); //make sure messages pane hides itself.
+			navigateTo(tab); //!!! commented out for testing. !!!
+			}
+		}
+	else	{
+		app.u.throwGMessage("No tab passed into handleTabs");
+		}
+	return false;
+	}
+
 //state can be forced 'show' or 'hide' or, if left blank, defaults to toggle.
 
 function handleMessagePane(state)	{
 	$target = $('#messagesContent');
 	$target.css('top',$target.parent().height()); //positions messages pane directly below tab bar, regardless of tab bar height.
-	console.log($target.css('display'))
-	if(state == 'show' || $target.css('display') == 'none')	{
+	console.log($target.css('display'));
+	if(state == 'hide' && $target.css('display') == 'none')	{} //pane is already hidden. do nothing.
+	else if(state == 'show' || $target.css('display') == 'none')	{
 		$target.slideDown();
 		$('.messagesTab').addClass('messagesTabActive');
 		}
@@ -142,32 +173,37 @@ function handleMessagePane(state)	{
 <div id='mastHead'>
 
 	<div class='clearfix headerTop'>
-		<div class='logo pointer' onClick="showUI('/biz/recent.cgi');" title='home'>Logo</div>
-		<div class='menu'>
+		<div class='logo pointer' onClick="showUI('/biz/recent.cgi');" title='home'><img src='images/anycommerce_logo-30x173.png' width='173' height='30' alt='anyCommerce' /></div>
+		<div class='menu floatRight'>
 		<span class='pointer' onClick="return navigateTo('/biz/downloads/index.cgi');" title='Use our windows clients for managing orders and product'>Downloads</span> |
 		<span class='pointer' onClick="return navigateTo('#!taskManager');" title='view and edit your task list'>Tasks</span> | 
 		<span class='pointer' onClick="app.ext.admin.a.logout(); return false;" title='log out of your account' >Exit</span>
 		</div>
+		
+		<div class='floatRight marginRight'>
+Logged in as: <span class='username'></span> on <span class='domain' onClick='app.ext.admin.a.showDomainChooser(); return false;'></span> <span class='partition'></span>
+		</div>
+		
 	</div>
 
-	<div class='clearfix headerTabs'>
+	<div class='clearfix mhTabsContainer'>
 	<ul class='showIcons'>
-		<li class='toggleArrow' onClick="toggleHeaderTabs()" title='Toggle this menu to be taller or shorter'>&#9650;</li>
-		<li class='setupTab' onClick="handleMessagePane('hide'); navigateTo('setup'); return false;"><span class='text'>Setup</span><span class='icon'></span></li>
-		<li class='sitesTab active' onClick="handleMessagePane('hide'); navigateTo('sites'); return false;"><span class='text'>Sites</span><span class='icon'></span></li>
-		<li class='productsTab' onClick="handleMessagePane('hide'); navigateTo('products'); return false;"><span class='text'>Products</span><span class='icon'></span></li>
-		<li class='ordersTab' onClick="handleMessagePane('hide'); navigateTo('orders'); return false;"><span class='text'>Orders</span><span class='icon'></span></li>
-		<li class='crmTab' onClick="handleMessagePane('hide'); navigateTo('crm'); return false;"><span class='text'>CRM</span><span class='icon'></span></li>
-		<li class='syndicationTab' onClick="handleMessagePane('hide'); navigateTo('syndication'); return false;"><span class='text'>Syndication</span><span class='icon'></span></li>
-		<li class='reportsTab' onClick="handleMessagePane('hide'); navigateTo('reports'); return false;"><span class='text'>Reports</span><span class='icon'></span></li>
-		<li class='kpiTab' onClick="handleMessagePane('hide'); navigateTo('kpi'); return false;"><span class='text'>KPI</span><span class='icon'></span></li>
-		<li class='utilitiesTab' onClick="handleMessagePane('hide'); navigateTo('utilities'); return false;"><span class='text'>Utilities</span><span class='icon'></span></li>
-		<li class='supportTab' onClick="handleMessagePane('hide'); navigateTo('support'); return false;"><span class='text'>Support</span><span class='icon'></span></li>
-		<li class='messagesTab' onClick="handleMessagePane();"><span class='text'>Messages</span><span class='messageCount'>12</span></li>
+		<li class='toggleArrow alignCenter' onClick="toggleHeaderTabs()" title='Toggle this menu to be taller or shorter'>&#9650;</li>
+		<li class='setupTab' onClick="return handleMHTabs('setup');"><span class='text'>Setup</span><span class='icon'></span></li>
+		<li class='sitesTab active' onClick="return handleMHTabs('sites');"><span class='text'>Sites</span><span class='icon'></span></li>
+		<li class='productsTab' onClick="return handleMHTabs('products');"><span class='text'>Products</span><span class='icon'></span></li>
+		<li class='ordersTab' onClick="return handleMHTabs('orders');"><span class='text'>Orders</span><span class='icon'></span></li>
+		<li class='crmTab' onClick="return handleMHTabs('crm');"><span class='text'>CRM</span><span class='icon'></span></li>
+		<li class='syndicationTab' onClick="return handleMHTabs('syndication');"><span class='text'>Syndication</span><span class='icon'></span></li>
+		<li class='reportsTab' onClick="return handleMHTabs('reports');"><span class='text'>Reports</span><span class='icon'></span></li>
+		<li class='kpiTab' onClick="return handleMHTabs('kpi');"><span class='text'>KPI</span><span class='icon'></span></li>
+		<li class='utilitiesTab' onClick="return handleMHTabs('utilities');"><span class='text'>Utilities</span><span class='icon'></span></li>
+		<li class='supportTab' onClick="return handleMHTabs('support');"><span class='text'>Support</span><span class='icon'></span></li>
+		<li class='messagesTab' onClick="return handleMHTabs('messages');"><span class='text'>Messages</span><span class='messageCount'>12</span></li>
 	</ul>
 	<div id='messagesContent' class='displayNone'></div>
 	</div>
-	<div id='navTabs'><a href='#'>link</a>  | <a href='#'>link</a></div>
+	<div id='navTabs'><a href='#'>link</a> | <a href='#'>link</a> | <a href='#'>link</a></div>
 	<div id='breadcrumb'></div>
 </div>
 
@@ -176,8 +212,6 @@ function handleMessagePane(state)	{
 
 
 	<div id='globalMessaging' class='appMessaging'></div>
-
-	
 
 
 	<div id='homeContent' class='displayNone tabContent' data-section='home'></div><!-- home acts as a default as well -->
