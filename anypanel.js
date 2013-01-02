@@ -7,6 +7,9 @@
 			data : {}, //what data to use to translate the panel.
 			call : null, //
 			q : 'mutable', //which q to use.
+			extension : '',
+			name : '',
+			persist : false, //if set to true and name AND extension set, will save to localStorage using devicePreferences
 			settingsMenu : {}
 			},
 		_init : function(){
@@ -37,8 +40,14 @@
 				(o.state) === 'close' ? this.close() : this.open(); //set the panel to open or close. will open default or value passed in options.
 				
 				
-
-				$t.children(":nth-child(2)").addClass('ui-widget-content ui-corner-bottom dragbox-content').css('borderTop','0'); //content area.
+				var $content = $t.children(":nth-child(2)");
+				if($content.length)	{}
+				else	{$content = $("<div \/>"); $content.appendTo($t);}
+				$content.addClass('ui-widget-content ui-corner-bottom dragbox-content').css('borderTop','0'); //content area.
+//				if(this.data && this.templateID)	{transmogrify}
+//				else if(this.call && this.tempateID)	{}		
+//				else if(this.tempateID)	{$content.append(app.renderFunctions.createTemplateInstance('',templateID))} !!! finish and test.
+//				else	{} //do nothing. no content specified. this is perfectly valid, data may already have been on dom.
 				}
 			}, //_init
 
@@ -65,11 +74,13 @@
 		close : function(){
 			$("[data-btn-action='toggle']",this.element).button({icons : {primary : 'ui-icon-triangle-1-s'}});
 			$('.dragbox-content',this.element).hide();
+			$('.ui-widget-header',this.element).addClass('ui-corner-bottom');
 			this.options.state = 'close';
 			},
 		open : function(){
 			$("[data-btn-action='toggle']",this.element).button({icons : {primary : 'ui-icon-triangle-1-n'}});
 			$('.dragbox-content',this.element).show();
+			$('.ui-widget-header',this.element).removeClass('ui-corner-bottom');
 			this.options.state = 'open'
 			},
 		toggle : function(){
@@ -96,6 +107,7 @@
 			else	{} //no listitems. do nothing.
 			},
 		destroy : function(){
+			this.destroySettingsMenu();
 			this.element.empty().remove();
 			}
 		}); // create the widget
