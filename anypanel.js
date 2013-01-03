@@ -2,7 +2,7 @@
 (function($) {
 	$.widget("ui.anypanel",{
 		options : {
-			state : 'open', //open and close are acceptable values. sets panel contents to open or closed. Any value other than 'close' triggers open.
+			state : 'open', //open, close and preferences are acceptable values. sets panel contents to open or closed. Any value other than 'close' triggers open.
 			templateID : null, //what any commerce template to use to populate the panel.
 			data : {}, //what data to use to translate the panel.
 			call : null, //
@@ -14,7 +14,7 @@
 			},
 		_init : function(){
 			var self = this,
-			o = self.options,
+			o = self.options, //shortcut
 			$t = self.element;
 			if($t.data('isanypanel'))	{} //already a panel, do nothing.
 			else	{
@@ -37,8 +37,7 @@
 				if(o.settingsMenu)	{this.buildSettingsMenu()}
 				
 				$header.append($("<button \/>").attr('data-btn-action','toggle').css(buttonStyles).text('Open/close panel').button({text: false}).on('click.panelViewState',function(){self.toggle()})); //settings button
-				(o.state) === 'close' ? this.close() : this.open(); //set the panel to open or close. will open default or value passed in options.
-				
+			
 				
 				var $content = $t.children(":nth-child(2)");
 				if($content.length)	{}
@@ -70,22 +69,57 @@
 					break;
 				}
 			},
-		
+
+		handleInitialState : function()	{
+			if(this.options.state == 'preferences')	{
+				var preferences = app.ext.admin.u.devicePreferencesGet(this.extension);
+				this.options.state = preferences.anypanel[this.options.name].state || 'open'; //if not defined, default to open.
+				}
+			
+			if(this.options.state == 'close')	{ this.close();}
+			else if (this.options.state == 'open')	{this.open();}
+			else	{
+				console.log("unknown state passed into anypanel");
+				}
+			},
+
+		toggle : function(){
+			if(this.options.state == 'open')	{this.close()}
+			else	{this.open()}
+			},
+
+//the corner bottom class is added/removed to the header as the panel is closed/opened, respectively, for aeshtetic reasons.
 		close : function(){
 			$("[data-btn-action='toggle']",this.element).button({icons : {primary : 'ui-icon-triangle-1-s'}});
 			$('.dragbox-content',this.element).hide();
 			$('.ui-widget-header',this.element).addClass('ui-corner-bottom');
 			this.options.state = 'close';
+			this.handlePreferencesStateUpdate('close');
 			},
+
 		open : function(){
 			$("[data-btn-action='toggle']",this.element).button({icons : {primary : 'ui-icon-triangle-1-n'}});
 			$('.dragbox-content',this.element).show();
 			$('.ui-widget-header',this.element).removeClass('ui-corner-bottom');
-			this.options.state = 'open'
+			this.options.state = 'open';
+			this.handlePreferencesStateUpdate('open');
 			},
-		toggle : function(){
-			if(this.options.state == 'open')	{this.close()}
-			else	{this.open()}
+
+		handlePreferencesStateUpdate : function(value)	{
+			var r = false; //will return true if a preferences update occurs.
+			if(this.persist && value)	{
+				if(this.extension && this.name)	{
+					var updatedPreferences = {"anypanel":{}};
+					updatedPreferences.anypanel[this.options.name] = {'state':value};
+					var preferences = $.extend(true,app.ext.admin.u.devicePreferencesGet(this.options.extension),updatedPreferences); //make sure panel object exits. general panel is always open.
+					app.ext.admin.u.devicePreferencesSet(this.options.extension,preferences); //update the localStorage session var.
+					r = true;
+					}
+				else	{
+					console.warn("anypanel has persist enabled, but either name ["+this.name+"] or extension ["+this.extension+"] not declared. This is a non-critical error, but it means panel will not be persistant.");
+					}
+				}
+			return r;
 			},
 
 		destroySettingsMenu : function()	{
