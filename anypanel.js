@@ -2,7 +2,7 @@
 (function($) {
 	$.widget("ui.anypanel",{
 		options : {
-			state : 'open', //open, close and preferences are acceptable values. sets panel contents to open or closed. Any value other than 'close' triggers open.
+			selector : 'open', //open, close and preferences are acceptable values. sets panel contents to open or closed. Any value other than 'close' triggers open.
 			templateID : null, //what any commerce template to use to populate the panel.
 			data : {}, //what data to use to translate the panel.
 			call : null, //

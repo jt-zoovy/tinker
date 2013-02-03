@@ -1,0 +1,63 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>Any Message</title>
+
+
+
+<link rel="stylesheet" type="text/css" href="jquery-ui-1.9.2.custom.min.css"/>
+
+
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>
+<script src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.9.2/jquery-ui.min.js"></script>
+<script type="text/javascript" src="anymessage.js"></script>
+
+<script type='text/javascript'>
+
+function testMessages()	{
+//simple message output, used as sample
+	$('#allBase').anymessage({'message':'All your base are belong to us','persistant':true});
+
+//output sample and for testing err type messages.	
+	$('#jimmyn').anymessage({'iconClass':'ui-icon-clock','containerClass':'ui-state-error','persistant':true});
+	$('#jimmyn').anymessage('addMessage',{'errtype':'youerr','errmsg':'Hello Toast, I greatly admire your starship','errid':'2345'});
+
+	$('#mrmom').anymessage({'iconClass':'ui-icon-clock','containerClass':'ui-state-error','persistant':true});
+	$('#mrmom').anymessage('addMessage',{'_msgs':2,'_msg_1_type':"youerr",'_msg_1_txt':"You're doing it wrong",'_msg_1_id':"9876",'_msg_2_type':"youerr",'_msg_2_txt':"I'm doing it the Jack Butler way!",'_msg_2_id':"3215"});
+
+	}
+
+</script>
+
+</head>
+
+<body style="font-family:'Palatino Linotype', 'Book Antiqua', Palatino, serif;" onload="testMessages();">
+
+
+<p>
+There are two ways to call a message.
+<br /><strong>1:</strong><br />
+$('#allBase').anymessage({'message':'All your base are belong to us'});<br />
+This is the same style, using an API response for the message contents: <br />
+$('#allBase').anymessage('message':responseData);<br />
+(reponseData could be formatted using _err, _msgs or @issues response format)<br />
+The output would look like the message below:<br />
+<div id='allBase'></div>
+
+<br  />
+<br /><strong>2:</strong><br />
+
+Alternatively, you could call it like this:<br />
+$('#diddy').anymessage({'iconClass':'ui-icon-clock','containerClass':'ui-state-error'}); (all params are optional)<br />
+followed by:<br />
+$('#diddy').anymessage('addMessage',responseData);<br />
+which would output the following (uses err responseData)<br />
+<div id='jimmyn'></div>
+<br />
+Or as so, if multipage response using _msgs
+
+<div id='mrmom'></div>
+
+</body>
+</html>
