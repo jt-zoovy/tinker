@@ -2,7 +2,6 @@
 (function($) {
 	$.widget("ui.anymessage",{
 		options : {
-			selector : null, //can be a string (a jq selector) or a jquery object.
 			message : null, //a string or a anycommerce message object (err or _msg or @issues are acceptable)
 			gMessage : false, //set to true to throw a generic message. Will include extra error details
 			containerClass : 'ui-state-highlight', //will be added to container, if set. will add no ui-state class if this is set.
@@ -11,9 +10,6 @@
 			},
 
 		_init : function(){
-			if(this.options.selector && typeof this.options.selector === 'string')	{this.element = $(selector);} // !!! needs to be app.u.jqSelector here.
-			else if(this.options.selector && typeof this.options.selector === 'object')	{this.element =this.options.selector}
-			else	{}
 			
 			var self = this,
 			o = self.options, //shortcut
