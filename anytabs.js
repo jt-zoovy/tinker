@@ -8,30 +8,49 @@
 			o = self.options, //shortcut
 			$t = self.element; //this is the targeted element (ex: $('#bob').anymessage() then $t is bob)
 			
-			$t.addClass('ui-tabs ui-widget ui-widget-anytabs')
-			self.tabs = $("ul",$t).first();
-
-//style and move tabs into container.
-			self._handleContent();
-			self._addClasses2Content();
-			
-//style and add click events to tabs.
-			self._addClasses2Tabs();
-			self._addEvent2Tabs();
-//make a tab visible/active.
-			self._handleDefaultTab();
+			if($t.attr('widget') == 'anytabs')	{} //id has already been set as tabs.
+			else	{
+				console.log('got into init else');
+				$t.attr('widget','anytabs')
+				$t.addClass('ui-tabs ui-widget ui-widget-anytabs')
+				self.tabs = $("ul",$t).first();
+	
+	//style and move tabs into container.
+				self._handleContent();
+				self._addClasses2Content();
+				
+	//style and add click events to tabs.
+				self._addClasses2Tabs();
+				self._addEvent2Tabs();
+	//make a tab visible/active.
+				self._handleDefaultTab();
+				}
 			}, //_init
 
 		_setOption : function(option,value)	{
 			$.Widget.prototype._setOption.apply( this, arguments ); //method already exists in widget factory, so call original.
 			},
 
-
-		_handleDefaultTab : function()	{
-//			var anchor = document.location.hash.substring(1);
-//			console.log('anchor: '+anchor);
+		_activateFirstTab : function()	{
 			this.tabs.children().first().addClass('ui-state-active ui-tabs-active');
 			this.tabContent.children().first().css('display','block');
+			},
+
+		_handleDefaultTab : function()	{
+			var anchor = document.location.hash;
+//if no anchor is set, activate the default.
+			if(anchor)	{
+				var foundMatch = false;
+				$('a',this.element).each(function(){
+					if($(this).attr('href') == anchor)	{$(this).trigger('click'); foundMatch = true; return false;} //the return false breaks out of the loop.
+					});
+//if href value matches the anchor, trigger the default tab.
+				if(foundMatch)	{}
+				else	{this._activateFirstTab();}
+				}
+			else	{
+				this._activateFirstTab();
+				}
 			},
 
 		_addEvent2Tabs : function()	{
@@ -65,14 +84,30 @@
 			
 			},
 
+		
+
 		reveal : function($tab)	{
-			var dac = $tab.find('a').attr('href').substring(1); //data-anytab-content
-			
-			this.tabs.find('.ui-state-active').removeClass('ui-state-active ui-tabs-active');
-			$tab.addClass('ui-state-active ui-tabs-active');
-			
-			this.tabContent.find('.ui-tabs-panel').hide();
-			$("[data-anytab-content='"+dac+"']",this.tabContent).show();
+			if(typeof $tab == 'string')	{
+				if($tab.charAt(0) == '#')	{}
+				else	{$tab = '#'+$tab}
+				$('a',this.element).each(function(){
+					if($(this).attr('href') == $tab)	{
+						$(this).trigger('click'); //will re-execute this function with $tab as object.
+						return false; //breaks out of each loop.
+						}
+					});
+				
+				}
+			else if(typeof $tab == 'object')	{
+				var dac = $tab.find('a').attr('href').substring(1); //data-anytab-content
+				document.location.hash = dac; //set hash. triggering click doesn't do this.
+				this.tabs.find('.ui-state-active').removeClass('ui-state-active ui-tabs-active');
+				$tab.addClass('ui-state-active ui-tabs-active');
+
+				this.tabContent.find('.ui-tabs-panel').hide();
+				$("[data-anytab-content='"+dac+"']",this.tabContent).show();
+				}
+			else	{} //unknownn type for $tab far
 			},
 
 //clear the message entirely. run after a close. removes element from DOM.
