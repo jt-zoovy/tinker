@@ -1,0 +1,84 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>Bannimate</title>
+
+
+
+<link rel="stylesheet" type="text/css" href="jquery-ui-1.9.2.custom.min.css"/>
+
+
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>
+<script src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.9.2/jquery-ui.min.js"></script>
+
+
+<style type='text/css'>
+.bannerContainer	{width:450px; height:300px; overflow:hidden; border:1px solid red; position:relative;}
+.bannerContainer .bannerText, .bannerContainer .bannerPic	{display:none;}
+
+.bannerContainer .bannerText	{position:absolute; left:1000px; top:100px; z-index:10; font-size:100px;} */
+.bannerContainer .bannerPic	{position:absolute; left:1000px; top:100px; z-index:5;}
+.bannerContainer .bannerBG	{position:absolute; top:0; left:0; z-index:1;}
+
+</style>
+
+<script type='text/javascript'>
+
+function bannimate(){
+
+	var $container = $(".bannerContainer"),
+	items = $(".bannerText",$container),
+	$bg = $(".bannerBG",$container);
+//pretty simple. animates left and then when done, right. uses containers width and width of image to determine how much animating should be done.	
+	function bannimateBG()	{
+		if($bg.position().left >= 0)	{$bg.animate({'left':(($("img",$bg).width() - $container.width()) * -1)+'px'},20000,'',function(){bannimateBG();});}
+		else	{$bg.animate({'left':'0px'},20000,'linear',function(){bannimateBG();});}
+		}
+	
+	function bannimateText(index)	{
+		console.log(index);
+		$(items[index]).show().animate({'left':'20px','font-size':'30px'},'slow','',function(){
+			var $t = $(this);
+			setTimeout(function(){
+
+index += 1;
+if(index >= items.length)	{index = 0}
+$t.animate({'opacity':.1,'font-size':'40px','word-spacing':'20px'},'fast','',function(){$t.removeAttr('style')}); //remove style will return text to original position for next animation.
+bannimateText(index);			
+
+				},3000);
+			})
+		
+		}
+//	console.log($(items[0]));	
+	bannimateBG(); //animate bg image.
+	bannimateText(0)
+	}
+
+
+</script>
+
+
+</head>
+
+<body onload="bannimate();">
+
+
+
+<div class='bannerContainer'>
+
+	<div class='bannerText'>Animation is cool.</div>
+	<div class='bannerText'>You know you love it.</div>
+	<div class='bannerText'>We all love it.</div>
+	<div class='bannerText'>I just loved it and I wanna love it again!</div>
+
+	<div class='bannerPic'><img src="images/dogrunning.gif" width="141" height="113" alt="runningdog" /></div>
+
+	<div class='bannerBG'><img src="images/abstractbg-755x300.jpg" width="755" height="300" alt="bg" /></div>
+
+</div>
+
+
+</body>
+</html>
