@@ -1,4 +1,19 @@
 //http://net.tutsplus.com/tutorials/javascript-ajax/coding-your-first-jquery-ui-plugin/
+
+/*
+anymessage - a utility for throwing any commerce messages to the user.
+examples: 
+$('#allBase').anymessage({'message':'All your base are belong to us'});
+$('#allBase').anymessage('message':responseData); where responseData is an API response containing a message (either err, _msg or @issues format)
+
+Alternatively, you could call it like this:
+$('#diddy').anymessage({'iconClass':'ui-icon-clock','containerClass':'ui-state-error'}); (all params are optional)<br />
+$('#diddy').anymessage('addMessage',responseData);
+
+For the list of available params, see the 'options' object below.
+
+*/
+
 (function($) {
 	$.widget("ui.anymessage",{
 		options : {

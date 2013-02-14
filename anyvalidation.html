@@ -1,0 +1,61 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>Untitled Document</title>
+
+
+<script type='text/javascript'>
+//will validate based on the input type unless data-validation-type is set, then it will validate on that. ex: CC for credit card # validation.
+
+(function($) {
+	$.widget("ui.anyvalidate",{
+		options : {
+			fields : [], //list of required fields. leave optional form fields out. match to input 'name'
+			validators : {} //optional object for adding custom validators.
+			},
+		_init : function(){
+
+			$('input',this.element).each(function(){
+				var $input = $(this),
+				type = $input.data('validation-type') || $input.attr('type'),
+				valid = true; //what is set on object for data-is-valid. set to false if any validation fails.
+				
+				switch(type){
+
+					case 'email':
+						//some email validation.
+						//if tru
+						break;
+					case 'CC':
+						//credit card algorithm validation.
+						break;
+		
+					default:
+						if(!$(this).val())	{r = false; $(this).addClass('ui-state-error')}
+					}
+				});
+
+			
+			}, //_init
+
+		_setOption : function(option,value)	{
+			$.Widget.prototype._setOption.apply( this, arguments ); //method already exists in widget factory, so call original.
+			} //_setOption
+
+		}); // create the widget
+})(jQuery); 
+
+
+</script>
+
+
+</head>
+
+<body>
+
+
+
+
+</body>
+</html>

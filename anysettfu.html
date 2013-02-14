@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>Any Message</title>
+
+
+
+<link rel="stylesheet" type="text/css" href="jquery-ui-1.9.2.custom.min.css"/>
+
+
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>
+<script src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.9.2/jquery-ui.min.js"></script>
+
+<script type='text/javascript'>
+
+
+// bulk of this code came from here:
+// http://stackoverflow.com/questions/3160277/jquery-table-sort
+(function($) {
+	$.widget("ui.anycb",{
+		options : {
+			},
+		_init : function(){
+			var self = this,
+			$label = self.element,
+			$input = $("input",$label).first(),
+			$container = $("<span \/>").addClass('ui-widget ui-widget-content ui-corner-all ui-widget-header').css({'position':'relative','display':'inline-block','width':'55px','margin-right':'6px','height':'20px','z-index':1}),
+			$span = $("<span \/>").css({'padding':'0px','width':'30px','text-align':'center','height':'20px','line-height':'20px','position':'absolute','top':-1,'z-index':2,'font-size':'.75em'});
+
+			self.span = $span; //global (within plugin) for easy reference.
+
+			$input.hide();
+			$container.append($span);
+			$label.prepend($container);
+			$input.is(':checked') ? self._turnOn() :self._turnOff(); //set default
+	
+			$input.on('change',function(){
+				if($input.is(':checked')){self._turnOn();}
+				else	{self._turnOff();}
+				});
+
+			}, //_init
+		_turnOn : function()	{
+			this.span.text('on');
+			this.span.addClass('ui-state-highlight ui-corner-left').removeClass('ui-state-default ui-corner-right');
+			this.span.animate({'left':-1},'fast');
+			},
+		_turnOff : function()	{
+			this.span.text('off');
+			this.span.addClass('ui-state-default ui-corner-right').removeClass('ui-state-highlight ui-corner-left');
+			this.span.animate({'left': 24},'fast');
+			},
+		_setOption : function(option,value)	{
+			$.Widget.prototype._setOption.apply( this, arguments ); //method already exists in widget factory, so call original.
+			}
+		}); // create the widget
+})(jQuery); 
+
+
+
+
+
+</script>
+
+</head>
+
+<body style="font-family:'Palatino Linotype', 'Book Antiqua', Palatino, serif;" onload="$('label').anycb();">
+
+
+<label>
+	<input type='checkbox' name='something'/>
+	Some piece of text
+</label>
+
+</body>
+</html>
