@@ -1,0 +1,110 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="keywords" content="Sam Dutton, HTML5, JavaScript" />
+<meta name="description" content="Simplest possible examples of HTML, CSS and JavaScript." />
+<meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1">
+<meta http-equiv="X-UA-Compatible" content="chrome=1"/>
+<title>getUserMedia</title>
+<link rel="stylesheet" href="../css/main.css" />
+<style>
+@media screen and (min-width: 1000px) {
+  video {
+    height: 540px;
+  }
+}
+</style>
+
+
+<script>
+
+function hasGetUserMedia() {
+	return !!(navigator.getUserMedia);
+	}
+
+
+
+
+
+
+
+
+window.URL = window.URL || window.webkitURL;
+navigator.getUserMedia  = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia || navigator.msGetUserMedia;
+if (hasGetUserMedia()) {
+	console.log("Good to Go!");
+	}
+else {
+	console.warn('getUserMedia() is not supported in your browser');
+	}
+
+
+var video = document.querySelector('video');
+var onFailSoHard = function(e) {
+	console.log('Reeeejected!', e);
+	};
+
+if (navigator.getUserMedia) {
+  navigator.getUserMedia({audio: true, video: true}, function(stream) {
+    video.src = window.URL.createObjectURL(stream);
+  }, onFailSoHard);
+} else {
+  video.src = 'somevideo.webm'; // fallback.
+}
+
+/*
+
+
+
+var stream;
+var n = navigator.getUserMedia({audio: true, video: true}, function(localMediaStream) {
+  window.stream = localMediaStream;
+  var video = document.querySelector("video");
+  try {
+    video.src = window.URL.createObjectURL(localMediaStream);
+  } catch(e) {
+    try {
+      video.mozSrcObject = localMediaStream;
+      video.play();
+    } catch(e){
+      console.log("Error setting video src: ", e);
+    }
+  }
+}, function(error) {
+  console.log("navigator.getUserMedia error: ", error);
+});
+*/
+</script>
+</head>
+<body>
+<div id="container">
+
+  <h1><a href="../index.html" title="simpl.info home page">simpl.info</a> getUserMedia</h1>
+
+  <video autoplay></video>
+
+
+
+  <p>The <code>LocalMediaStream</code> object <code>stream</code> returned by <code>getUserMedia()</code> in this demo is in global scope, so you can inspect it from the console.</p>
+
+  <p>For more information, see <a href="http://www.html5rocks.com/en/tutorials/getusermedia/intro/" title="Media capture article by Eric Bidelman on HTML5 Rocks">Capturing Audio &amp; Video in HTML5</a> on HTML5 Rocks.</p>
+
+<a href="https://github.com/samdutton/simpl/blob/master/getusermedia/index.html" title="View source for this page on github" id="viewSource">View source on github</a>
+</div>
+
+
+
+<pre>
+
+http://blog.gingertech.net/2012/06/04/video-conferencing-in-html5-webrtc-via-web-sockets/
+http://www.html5rocks.com/en/tutorials/webrtc/basics/#toc-rtcpeerconnection
+
+http://code.google.com/p/webrtc-samples/source/browse/trunk/apprtc/#apprtc%2Fjs
+http://html5videoguide.net/presentations/WebDirCode2012/websocket/websocket-server.js
+view-source:http://html5videoguide.net/presentations/WebDirCode2012/websocket/webrtc.html
+</pre>
+
+</body>
+</html>
