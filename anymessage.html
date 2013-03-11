@@ -18,15 +18,46 @@
 function testMessages()	{
 //simple message output, used as sample
 	$('#allBase').anymessage({'message':'All your base are belong to us','persistant':true});
+	$('#allBase').anymessage({'message':'All your base are belong to me','persistant':true});
+	$('#allBase').anymessage({'message':'All your base are belong to I','persistant':true});
 
-//output sample and for testing err type messages.	
-	$('#jimmyn').anymessage({'iconClass':'ui-icon-clock','containerClass':'ui-state-error','persistant':true});
-	$('#jimmyn').anymessage('addMessage',{'errtype':'youerr','errmsg':'Hello Toast, I greatly admire your starship','errid':'2345'});
 
-	$('#mrmom').anymessage({'iconClass':'ui-icon-clock','containerClass':'ui-state-error','persistant':true});
-	
-	$('#mrmom').anymessage('addMessage',{'_msgs':2,'_msg_1_type':"youerr",'_msg_1_txt':"You're doing it wrong",'_msg_1_id':"9876",'_msg_2_type':"youerr",'_msg_2_txt':"I'm doing it the Jack Butler way!",'_msg_2_id':"3215"});
+	$('#mrmom').anymessage({'message': {'_msgs':2,'_msg_1_type':"youerr",'_msg_1_txt':"You're doing it wrong",'_msg_1_id':"9876",'_msg_2_type':"youerr",'_msg_2_txt':"I'm doing it the Jack Butler way!",'_msg_2_id':"3215"},'iconClass':'ui-icon-clock','containerClass':'ui-state-highlight','persistant':true});
 
+	$('#neutron').anymessage({'message': {'errtype':'iseerr','errid':1234,'errmsg':'Hello Toast, I greatly admire your starship.'}});
+
+	}
+
+
+var app = {
+	model : {
+		version : 201307
+		},
+	vars : {
+		domain : 'www.something.com',
+		release : '201307.A'
+		},
+	u : {
+		guidGenerator : function() {
+			var S4 = function() {
+				return (((1+Math.random())*0x10000)|0).toString(16).substring(1);
+				};
+			return (S4()+S4()+S4()+S4()+S4()+S4()+S4()+S4());
+			},
+		isSet : function(s)	{
+			var r;
+			if(s == null || s == 'undefined' || s == '')
+				r = false;
+			else if(typeof s != 'undefined')
+				r = s;
+			else
+				r = false;
+			return r;
+			}, //isSet
+		dump : function(M)	{
+			typeof M == 'object' ? console.dir(M) : console.log(M);
+			}
+		}
 	}
 
 </script>
@@ -59,6 +90,7 @@ which would output the following (uses err responseData)<br />
 Or as so, if multipage response using _msgs
 
 <div id='mrmom'></div>
+<div id='neutron'></div>
 
 </body>
 </html>

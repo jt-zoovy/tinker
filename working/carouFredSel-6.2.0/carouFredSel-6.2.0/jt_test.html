@@ -1,0 +1,97 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+	<head>
+		<meta http-equiv="content-type" content="text/html;charset=iso-8859-1" />
+		<meta name="author" content="caroufredsel.dev7studios.com" />
+
+		<title>carouFredSel: a circular, responsive jQuery carousel</title>
+
+		<!-- include jQuery + carouFredSel plugin -->
+		<script type="text/javascript" language="javascript" src="jquery-1.8.2.min.js"></script>
+		<script type="text/javascript" language="javascript" src="jquery.carouFredSel-6.2.0-packed.js"></script>
+
+		<!-- optionally include helper plugins -->
+		<script type="text/javascript" language="javascript" src="helper-plugins/jquery.touchSwipe.min.js"></script>
+		<script type="text/javascript" language="javascript" src="helper-plugins/jquery.mousewheel.min.js"></script>
+
+		<!-- fire plugin onDocumentReady -->
+		<script type="text/javascript" language="javascript">
+			$(function() {
+				//	Scrolled by user interaction
+
+
+			});
+		</script>
+
+		<style type="text/css" media="all">
+
+			.list_carousel {
+				background-color: #ccc;
+				position:relative;
+				margin: 0 0 30px 60px;
+			}
+			.list_carousel ul {
+				margin: 0;
+				padding: 0;
+				list-style: none;
+				display: block;
+			}
+			.list_carousel li {
+				font-size: 40px;
+				color: #999;
+				text-align: center;
+				background-color: #eee;
+				border: 5px solid #999;
+				width: 50px;
+				height: 50px;
+				padding: 0;
+				margin: 6px;
+				display: block;
+				float: left;
+			}
+			.list_carousel.responsive {
+				width: auto;
+				margin-left: 0;
+			}
+			.clearfix {
+				float: none;
+				clear: both;
+			}
+			.foo2carouselPrev {
+				position:absolute;
+				left:-10px; top:20px; 
+				font-size:40px;
+			}
+			.foo2carouselNext {
+				position:absolute;
+				right:-10px; top:20px; 
+				font-size:40px;
+			}
+
+		</style>
+	</head>
+	<body>
+<p>&nbsp;</p><p>&nbsp;</p><p>&nbsp;</p>
+			<div class="list_carousel responsive">
+			<a class="foo2carouselPrev" href="#">&#187;</a>
+			<a class="foo2carouselNext" href="#">&gt;</a>
+				<ul id="foo2">
+					<li>a</li>
+					<li>b</li>
+					<li>c</li>
+					<li>d</li>
+					<li>e</li>
+					<li>f</li>
+					<li>g</li>
+					<li>h</li>
+					<li>i</li>
+					<li>j</li>
+					<li>k</li>
+					<li>l</li>
+					<li>m</li>
+				</ul>
+				<div class="clearfix"></div>
+			</div>
+
+	</body>
+</html>
