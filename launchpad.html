@@ -2,23 +2,28 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-<title>Untitled Document</title>
-<script type="text/javascript" src="file:///C|/Users/xbox_000/Documents/GitHub/AnyCommerce-Development/jquery-1.8.2.min.js"></script>
-<script type="text/javascript" src="file:///C|/Users/xbox_000/Documents/GitHub/AnyCommerce-Development/jquery-ui-1.9.1.custom.min.js"></script>
+<title>LAUNCHPAD</title>
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.8.2/jquery.min.js"></script>
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.10.1/jquery-ui.min.js"></script>
 <script type="text/javascript" src="file:///C|/Users/xbox_000/Documents/GitHub/AnyCommerce-Development/resources/jquery.mousewheel-3.0.6.min.js"></script>
 
 
 <style type='text/css'>
 
-.launchpad_tiles	{display:block; list-style:none; margin:0 12px; width:324px; overflow:hidden; padding:0; float:left;}
+.launchpad_tiles	{
+		display:block; list-style:none; padding:12px; margin:12px; 
+		width:324px; overflow:hidden; padding:12px; float:left;
+		}
 
 .launchpad_tiles li	{
 	width:150px; height:150px;
 	border:1px solid #000000;
-	background:#cccccc;
+	background:#FFCC00;
 	position:relative;
 	overflow: hidden;
-	float:left; margin:0 12px 12px 0;
+	float:left;
+	padding:12px;
+	margin:12px; /* a margin on the li helps the drag and drop usability */
 	-webkit-box-sizing: border-box; /* Safari/Chrome, other WebKit */
 	-moz-box-sizing: border-box;    /* Firefox, other Gecko */
 	box-sizing: border-box;         /* Opera/IE 8+ */
@@ -26,16 +31,15 @@
 .launchpad_tiles li.tile_2x2	{width:312px; height:312px;}
 .launchpad_tiles li.tile_2x1	{width:312px; height:150px;}
 
-#launchpad {width:100%; overflow:hidden; background:#093; height:500px; padding-top:12px;}
+#launchpad {width:100%; overflow:hidden; background:#093; height:600px; padding-top:12px;}
 #launchpad:hover	{overflow:auto;}
 #launchpadInner	{position:relative; left:0; width:10000px; }
 
-.column	{float:left; }
+.launchpad_tiles li span.handle	{position:absolute; bottom:0; right:0; background:#fff; width:25px; height:25px; display:none;}
 
+.launchpad_tiles .ui-sortable-placeholder { border: 1px dotted black; visibility: visible !important; background:#efefef;}
+.launchpad_tiles .ui-sortable-placeholder * { visibility: hidden; }
 
-.gridster ul	{list-style:none;}
-.gridster ul li	{background-color:#efefef;}
-.gridster ul.list2 li	{background-color:red;}
 </style>
 
 <!-- what is need to drag into a gridster:
@@ -53,8 +57,7 @@ function addTileMouseovers()	{
 	$('li',$('#launchpadInner')).each(function(){
 		var $li = $(this);
 		
-		
-		
+	
 		$li.on('mouseenter',function(){
 			$li.append($("<button>").text('remove').addClass('tileButton').css({'position':'absolute','top':0,'right':0}).button().on('click',function(){$li.empty().remove()}));
 			//probably should resize if a tile is removed.
@@ -92,7 +95,9 @@ function countDoubleWidths($ul){
 		})
 	}
 */
-$('ul',$LPI).each(function(){
+
+//resize ul to accomodate # and sizes of tiles.
+	$('ul.launchpad_tiles',$LPI).each(function(){
 	var $ul = $(this),
 //varying tile sizes mean would could have orpans on rows. so a double-width is counted as 2.5
 //not uber-accurate, but should solve most cases.
@@ -110,9 +115,9 @@ $('ul',$LPI).each(function(){
 
 //the inner launch pad div is given a very big width to start to ensure no wrapping.
 //This cuts it down to the actual width.
-$LPI.width(($lastCol.position().left + $lastCol.outerWidth() + 30)); //extra for margin.
+	$LPI.width(($lastCol.position().left + $lastCol.outerWidth() + 30)); //extra for margin.
 
-
+//bind mousewheel event to launchpad.
 	$LP.bind('mousewheel', function(event, delta, deltaX, deltaY) {
 //		console.log("delta:"+delta+" deltaX: "+deltaX+" deltaY: "+deltaY);
 //		console.log("width: "+($LPI.width() - $LP.width())); //-1672
@@ -138,6 +143,16 @@ $LPI.width(($lastCol.position().left + $lastCol.outerWidth() + 30)); //extra for
 				}
 			}
 		});
+	
+	$('li',$LPI).each(function(){
+		$(this).append("<span class='handle'><\/span>");
+		});
+	
+$( ".launchpad_tiles" ).sortable({
+		connectWith: '.launchpad_tiles'
+		});
+	
+	
 	}
 </script>
 
@@ -151,89 +166,89 @@ $LPI.width(($lastCol.position().left + $lastCol.outerWidth() + 30)); //extra for
 	<div id='launchpadInner'>
 
 	<ul class='launchpad_tiles'>
-	<li class='tile_2x1'>1</li>
-	<li class='tile_1x1'></li>
-	<li></li>
-	<li></li>
+		<li class='tile_2x1'><div class='tile'>1.0</div></li>
+		<li class='tile_1x1'><div class='tile'>1.1</div></li>
+		<li class='tile_1x1'><div class='tile'>1.2</div></li>
+		<li class='tile_1x1'><div class='tile'>1.3</div></li>
 	</ul>
 
 
 
 	<ul class='launchpad_tiles'>
-	<li>2.0</li>
-	<li class='tile_2x1'>2.01</li>
-	<li class='tile_2x1'>2.02</li>
-	<li>2.03</li>
-	<li>2.04</li>
-	<li class='tile_2x1'>2.05</li>
-	<li>2.06</li>
-	<li class='tile_2x1'>2.07</li>
-	<li>2.08</li>
-	<li class='tile_2x1'>2.09</li>
-	<li>2.10</li>
+		<li  class='tile_1x1'>2.0</li>
+		<li class='tile_2x1'>2.01</li>
+		<li class='tile_2x1'>2.02</li>
+		<li  class='tile_1x1'>2.03</li>
+		<li  class='tile_1x1'>2.04</li>
+		<li class='tile_2x1'>2.05</li>
+		<li  class='tile_1x1'>2.06</li>
+		<li class='tile_2x1'>2.07</li>
+		<li  class='tile_1x1'>2.08</li>
+		<li class='tile_2x1'>2.09</li>
+		<li  class='tile_1x1'>2.10</li>
 	</ul>
 
 
 
 	<ul class='launchpad_tiles'>
-	<li>3.0</li>
+	<li  class='tile_1x1'>3.0</li>
 	<li class='tile_2x1'>3.01</li>
-	<li>3.02</li>
-	<li>3.03</li>
-	<li>3.04</li>
-	<li>3.05</li>
-	<li>3.06</li>
-	<li>3.07</li>
-	<li>3.08</li>
-	<li>3.09</li>
-	<li>3.10</li>
+	<li  class='tile_1x1'>3.02</li>
+	<li  class='tile_1x1'>3.03</li>
+	<li  class='tile_1x1'>3.04</li>
+	<li  class='tile_1x1'>3.05</li>
+	<li  class='tile_1x1'>3.06</li>
+	<li  class='tile_1x1'>3.07</li>
+	<li  class='tile_1x1'>3.08</li>
+	<li  class='tile_1x1'>3.09</li>
+	<li  class='tile_1x1'>3.10</li>
 	</ul>
 
 
 	<ul class='launchpad_tiles'>
 	<li class='tile_2x1'>4</li>
-	<li></li>
-	<li></li>
-	<li></li>
+	<li  class='tile_1x1'></li>
+	<li  class='tile_1x1'></li>
+	<li  class='tile_1x1'></li>
 	</ul>
 
 
 	<ul class='launchpad_tiles'>
-	<li>5</li>
-	<li></li>
-	<li></li>
+	<li  class='tile_1x1'>5</li>
+	<li  class='tile_1x1'></li>
+	<li  class='tile_1x1'></li>
 	</ul>
 
 
 	<ul class='launchpad_tiles'>
 	<li class='tile_2x1'>6</li>
-	<li></li>
-	<li></li>
-	<li></li>
+	<li  class='tile_1x1'></li>
+	<li  class='tile_1x1'></li>
+	<li  class='tile_1x1'></li>
 	</ul>
 
 
 	<ul class='launchpad_tiles'>
-	<li>7</li>
-	<li></li>
-	<li></li>
+	<li  class='tile_1x1'>7</li>
+	<li  class='tile_1x1'></li>
+	<li  class='tile_1x1'></li>
 	<li class='tile_2x1'></li>
 	</ul>
 
 
 	<ul class='launchpad_tiles'>
 	<li class='tile_2x1'>8</li>
-	<li></li>
-	<li></li>
-	<li></li>
+	<li  class='tile_1x1'></li>
+	<li  class='tile_1x1'></li>
+	<li  class='tile_1x1'></li>
 	</ul>
 
 
 	<ul class='launchpad_tiles'>
 	<li class='tile_2x1'>9</li>
-	<li></li>
-	<li></li>
-	<li></li>
+	<li  class='tile_1x1'></li>
+	<li  class='tile_1x1'></li>
+	<li  class='tile_1x1'></li>
 	</ul>
 
 

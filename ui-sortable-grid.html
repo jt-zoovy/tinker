@@ -1,0 +1,183 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Untitled Document</title>
+
+<link rel="stylesheet" href="http://code.jquery.com/ui/1.10.2/themes/smoothness/jquery-ui.css" />
+
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.10.2/jquery-ui.min.js"></script>
+<script type="text/javascript" src="resources/mousewheel-3.0.6-min.js"></script>
+
+
+<style type="text/css">
+
+body	{font-size:100%; padding:0; margin:0;}
+
+
+#launchpad {width:100%; overflow:hidden; background:#600; height:600px; padding-top:12px;}
+#launchpad:hover	{overflow:auto;}
+#launchpadInner	{position:relative; left:0; width:10000px; }
+
+.launchpad_tiles { list-style-type: none; margin: 0 24px; padding: 0; width: 500px; float:left; }
+.launchpad_tiles li {
+	margin: 6px; padding: 0px; float: left; 
+	width: 150px; height: 150px; 
+	font-size: .9em; text-align: center; 
+	background:#efefef; 
+	position:relative;
+	-webkit-box-sizing: border-box; /* Safari/Chrome, other WebKit */
+	-moz-box-sizing: border-box;    /* Firefox, other Gecko */
+	box-sizing: border-box;         /* Opera/IE 8+ */	
+	}
+
+.launchpad_tiles li.tile_2x1	{width:312px;}
+
+.launchpad_tiles .ui-sortable-placeholder { border: 0; visibility: visible !important; background:#fc0;}
+.launchpad_tiles .ui-sortable-placeholder * { visibility: hidden; }
+.launchpad_tiles li span.handle	{position:absolute; bottom:0; right:0; background:#900; width:25px; height:25px;}
+
+#mastHead	{height:125px; background:#efefef; margin-bottom:2px;}
+#mastFoot	{height:60px; background:#9CF; position:fixed; bottom:0; left:0; right:0;}
+</style>
+
+
+
+<script type='text/javascript'>
+
+
+console.log("do it to it.");
+
+function handleTileGroupResize()	{
+	
+	var $LPI = $('#launchpadInner'),
+	$lastCol = $('.launchpad_tiles:last','#launchpadInner');
+	
+//resize ul to accomodate # and sizes of tiles.
+	$('ul.launchpad_tiles',$LPI).each(function(){
+		var $ul = $(this),
+//varying tile sizes mean there could be orpans on rows. so a double-width is counted as 2.5
+//not uber-accurate, but should solve most cases.
+		count = $('li',$ul).length + ($('.tile_2x1',$ul).length),
+		tileWidth = $('.tile_1x1',$LPI).first().outerWidth();
+		
+		
+		
+		if(count > 9)	{
+			var width = Math.ceil(( count / 3 )) * $('.tile_1x1',$LPI).first().outerWidth(true);
+			$ul.width(width);
+			}
+		else	{} //do nothing. six is the default size
+
+		});
+	$LPI.width('10000px'); //set high so ul's dont wrap. then readjust so no extra scrolling.
+	$LPI.width(($lastCol.position().left + $lastCol.outerWidth(true) + 30)); //extra for margin.
+	$('body').append(" -> width: "+($lastCol.position().left + $lastCol.outerWidth(true) + 30)+"<br>");
+	
+	}
+
+$(function() {
+	var $LPI = $('#launchpadInner'),
+	$LP = $('#launchpad')
+
+	handleTileGroupResize()
+
+	$( ".launchpad_tiles" ).sortable({
+		connectWith: '.launchpad_tiles',
+		stop: function( event, ui ) {
+			handleTileGroupResize(); //adjust ul's and launchpad inner div for new # of tiles
+			$('.tileButton').hide();
+			}
+		});
+
+	$('li','.launchpad_tiles').each(function(){
+		var $li = $(this);
+		$li.append($("<button>").text('remove').addClass('tileButton').css({'position':'absolute','top':0,'right':0}).button({icons: {primary: "ui-icon-close"},text: false}).on('click',function(){
+			$li.empty().remove()
+			handleTileGroupResize(); //adjust ul's and launchpad inner div for new # of tiles
+			}).hide());
+		$li.on('mouseover',function(){
+			$('.tileButton',$li).show();
+			});
+		$li.on('mouseleave',function(){
+			$('.tileButton',$li).hide();
+			});
+		})
+
+	});
+</script>
+
+</head>
+
+<body>
+
+<div id='mastHead'>This is the website header. this size may change</div>
+
+<section id='launchpad'>
+	<div id='launchpadInner'>
+
+	<ul class='launchpad_tiles'>
+		<li class='tile_1x1'>3.0</li>
+		<li class='tile_2x1'>3.01</li>
+		<li class='tile_1x1'>3.02</li>
+		<li class='tile_1x1'>3.03</li>
+		<li class='tile_1x1'>3.04</li>
+		<li class='tile_1x1'>3.05</li>
+		<li class='tile_1x1'><a href='#' onClick='alert("boob")'>3.06</a></li>
+		<li class='tile_1x1'>3.07</li>
+		<li class='tile_1x1'>3.08</li>
+		<li class='tile_1x1'>3.09</li>
+		<li class='tile_1x1'>3.10</li>
+	</ul>
+	
+	<ul class='launchpad_tiles'>
+		<li class='tile_1x1'>4.0</li>
+		<li class='tile_2x1'>4.01</li>
+		<li class='tile_1x1'>4.02</li>
+		<li class='tile_1x1'>4.03</li>
+		<li class='tile_1x1'>4.04</li>
+		<li class='tile_1x1'>4.05</li>
+		<li class='tile_1x1'>4.06</li>
+		<li class='tile_2x1'>4.07</li>
+		<li class='tile_1x1'>4.08</li>
+		<li class='tile_1x1'>4.09</li>
+		<li class='tile_1x1'>4.10</li>
+	</ul>
+	
+	<ul class='launchpad_tiles'>
+		<li class='tile_1x1'>5.0</li>
+		<li class='tile_2x1'>5.01</li>
+		<li class='tile_1x1'>5.02</li>
+		<li class='tile_1x1'>5.03</li>
+		<li class='tile_1x1'>5.04</li>
+		<li class='tile_1x1'>5.05</li>
+		<li class='tile_1x1'>5.06</li>
+		<li class='tile_2x1'>5.07</li>
+		<li class='tile_1x1'>5.08</li>
+		<li class='tile_1x1'>5.09</li>
+		<li class='tile_1x1'>5.10</li>
+	</ul>
+	
+	<ul class='launchpad_tiles'>
+		<li class='tile_1x1'>6.0</li>
+		<li class='tile_2x1'>6.01</li>
+		<li class='tile_1x1'>6.02</li>
+		<li class='tile_1x1'>6.03</li>
+		<li class='tile_1x1'>6.04</li>
+		<li class='tile_1x1'>6.05</li>
+		<li class='tile_1x1'>6.06</li>
+		<li class='tile_2x1'>6.07</li>
+		<li class='tile_1x1'>6.08</li>
+		<li class='tile_1x1'>6.09</li>
+		<li class='tile_1x1'>6.10</li>
+	</ul>
+
+	</div>
+</section>
+
+<div id='mastFoot'>
+Let's at least assume the possibility of a footer.
+</div>
+</body>
+</html>

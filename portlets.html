@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<!--
+  Created using jsbin.com
+  Source can be edited via http://jsbin.com/alutu/1/edit
+-->
+<head>
+<title>jQuery UI Portlets with one wide column</title>
+<meta charset="utf-8" />
+<style type="text/css">body{font:62.5% Tahoma,Verdana,Arial,sans-serif}</style>
+<!-- jQuery UI  |  http://jquery.com/  http://jqueryui.com/  http://jqueryui.com/docs/Theming  -->
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.8.2/jquery.min.js"></script>
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.10.1/jquery-ui.min.js"></script>
+<link href="http://ajax.googleapis.com/ajax/libs/jqueryui/1.7.2/themes/base/jquery-ui.css" rel="stylesheet" type="text/css" />
+
+
+
+<style type="text/css">
+
+.column { width: 200px; float: left; padding-bottom: 100px; }
+.skinny { width: 86px; float: left; }
+.portlet { float: left; margin: 0 1em 1em 0; }
+.portlet-header { margin: 0.3em; padding-bottom: 4px; padding-left: 0.2em; }
+.portlet-header .ui-icon { float: right; }
+.portlet-content { padding: 0.4em; }
+.ui-sortable-placeholder { border: 1px dotted black; visibility: visible !important; height: 86px !important; width:86px }
+.ui-sortable-placeholder * { visibility: hidden; }
+
+.launchpad_tiles li span.handle	{position:absolute; bottom:0; right:0; background:#900; width:25px; height:25px;}
+
+</style>
+<script>
+(function($) {
+$(function() {
+
+$(".column").sortable({
+	connectWith: '.column'
+	});
+
+$(".portlet").addClass("ui-widget ui-widget-content ui-helper-clearfix ui-corner-all")
+	.find(".portlet-header")
+		.addClass("ui-widget-header ui-corner-all")
+		.prepend('<span class="ui-icon ui-icon-minusthick"></span>')
+		.end()
+	.find(".portlet-content");
+
+$(".portlet-header .ui-icon").click(function() {
+	$(this).toggleClass("ui-icon-minusthick").toggleClass("ui-icon-plusthick");
+	$(this).parents(".portlet:first").find(".portlet-content").toggle();
+});
+
+$(".column").disableSelection();
+
+});
+})(jQuery);
+</script>
+
+<style id="jsbin-css">
+
+</style>
+</head>
+<body>
+
+<div class="column">
+
+	<div class="portlet">
+		<div class="portlet-header">Feeds</div>
+		<div class="portlet-content">Lorem ipsum dolor sit amet, consectetuer adipiscing elit</div>
+	</div>
+	
+	<div class="skinny portlet">
+		<div class="portlet-header">Skinny</div>
+		<div class="portlet-content">Lorem ipsum dolor sit amet</div>
+	</div>
+
+	<div class="skinny portlet">
+		<div class="portlet-header">Skinny</div>
+		<div class="portlet-content">Lorem ipsum dolor sit amet</div>
+	</div>
+
+	<div class="portlet">
+		<div class="portlet-header">Feeds</div>
+		<div class="portlet-content">Lorem ipsum dolor sit amet, consectetuer adipiscing elit</div>
+	</div>
+
+</div>
+
+<div class="wide column">
+
+	<div class="portlet">
+		<div class="portlet-header">Shopping</div>
+		<div class="portlet-content">Lorem ipsum dolor sit amet, consectetuer adipiscing elit</div>
+	</div>
+
+</div>
+
+<div class="column">
+
+	<div class="skinny portlet">
+		<div class="portlet-header">Skinny</div>
+		<div class="portlet-content">Lorem ipsum dolor sit amet</div>
+	</div>
+
+	<div class="skinny portlet">
+		<div class="portlet-header">Skinny</div>
+		<div class="portlet-content">Lorem ipsum dolor sit amet</div>
+	</div>
+
+	<div class="portlet">
+		<div class="portlet-header">Links</div>
+		<div class="portlet-content">Lorem ipsum dolor sit amet, consectetuer adipiscing elit</div>
+	</div>
+	
+	<div class="portlet">
+		<div class="portlet-header">Images</div>
+		<div class="portlet-content">Lorem ipsum dolor sit amet, consectetuer adipiscing elit</div>
+	</div>
+
+</div>
+
+
+</body>
+</html>
