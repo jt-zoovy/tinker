@@ -16,6 +16,7 @@
 	width:150px; height:150px;
 	border:1px solid #000000;
 	background:#cccccc;
+	position:relative;
 	overflow: hidden;
 	float:left; margin:0 12px 12px 0;
 	-webkit-box-sizing: border-box; /* Safari/Chrome, other WebKit */
@@ -25,15 +26,47 @@
 .launchpad_tiles li.tile_2x2	{width:312px; height:312px;}
 .launchpad_tiles li.tile_2x1	{width:312px; height:150px;}
 
-#launchpad {width:100%; overflow:hidden; background:#093;}
+#launchpad {width:100%; overflow:hidden; background:#093; height:500px; padding-top:12px;}
 #launchpad:hover	{overflow:auto;}
-#launchpadInner	{position:relative; left:0; width:10000px;}
+#launchpadInner	{position:relative; left:0; width:10000px; }
 
 .column	{float:left; }
 
+
+.gridster ul	{list-style:none;}
+.gridster ul li	{background-color:#efefef;}
+.gridster ul.list2 li	{background-color:red;}
 </style>
 
+<!-- what is need to drag into a gridster:
+for gridster
+http://stackoverflow.com/questions/14008439/how-to-drop-a-draggable-into-gridster
+-->
+
+
+
+
 <script type="text/javascript">
+
+
+function addTileMouseovers()	{
+	$('li',$('#launchpadInner')).each(function(){
+		var $li = $(this);
+		
+		
+		
+		$li.on('mouseenter',function(){
+			$li.append($("<button>").text('remove').addClass('tileButton').css({'position':'absolute','top':0,'right':0}).button().on('click',function(){$li.empty().remove()}));
+			//probably should resize if a tile is removed.
+			});
+		
+		$li.on('mouseleave',function(){
+			$('.tileButton',$li).hide();
+			});
+		});
+	}
+
+
 
 function initLaunchpad()	{
 	
@@ -41,9 +74,45 @@ var $LPI = $('#launchpadInner'),
 $LP = $('#launchpad'),
 $lastCol = $('.launchpad_tiles:last','#launchpadInner');
 
+addTileMouseovers();
+
+/*
+wont work. once ul is resized how many singles before or after a double change whether or not it could have an orphan.
+function countDoubleWidths($ul){
+	var r = 0; //what is returned.
+	$('.tile_2x1',$ul).each(function(){
+		var $li = $(this);
+		if($li.index() === 0)	{console.log('is first')}
+		else if($li.prev().hasClass('tile_2x1') || $li.prev().hasClass('tile_2x2'))	{} //if a double-wide is before, no concerns with empty space.
+		else if($li.prev().hasClass('tile_1x1') && $li.prev().prev().hasClass('tile_1x1'))	{} //if two solo tiles are before, no worries either.
+		else	{
+			//blank space before.
+			}
+		console.log($li.is(':last-child'));
+		})
+	}
+*/
+$('ul',$LPI).each(function(){
+	var $ul = $(this),
+//varying tile sizes mean would could have orpans on rows. so a double-width is counted as 2.5
+//not uber-accurate, but should solve most cases.
+	count = $('li',$ul).length + ($('.tile_2x1',$ul).length * 1.5);
+	
+	if(count > 6)	{
+		console.log('More than six tiles: '+count);
+		var width = ( count / 3 ) * 162;
+		console.log('width: '+width);
+		$ul.width(width);
+		}
+	else	{} //do nothing. six is the default size
+	
+	});
+
 //the inner launch pad div is given a very big width to start to ensure no wrapping.
 //This cuts it down to the actual width.
 $LPI.width(($lastCol.position().left + $lastCol.outerWidth() + 30)); //extra for margin.
+
+
 	$LP.bind('mousewheel', function(event, delta, deltaX, deltaY) {
 //		console.log("delta:"+delta+" deltaX: "+deltaX+" deltaY: "+deltaY);
 //		console.log("width: "+($LPI.width() - $LP.width())); //-1672
@@ -77,12 +146,13 @@ $LPI.width(($lastCol.position().left + $lastCol.outerWidth() + 30)); //extra for
 <body onLoad="initLaunchpad()">
 
 
+
 <section id='launchpad'>
 	<div id='launchpadInner'>
 
 	<ul class='launchpad_tiles'>
-	<li class='tile_2x2'>1</li>
-	<li></li>
+	<li class='tile_2x1'>1</li>
+	<li class='tile_1x1'></li>
 	<li></li>
 	<li></li>
 	</ul>
@@ -90,24 +160,38 @@ $LPI.width(($lastCol.position().left + $lastCol.outerWidth() + 30)); //extra for
 
 
 	<ul class='launchpad_tiles'>
-	<li>2</li>
-	<li></li>
-	<li class='tile_2x1'></li>
-	<li></li>
+	<li>2.0</li>
+	<li class='tile_2x1'>2.01</li>
+	<li class='tile_2x1'>2.02</li>
+	<li>2.03</li>
+	<li>2.04</li>
+	<li class='tile_2x1'>2.05</li>
+	<li>2.06</li>
+	<li class='tile_2x1'>2.07</li>
+	<li>2.08</li>
+	<li class='tile_2x1'>2.09</li>
+	<li>2.10</li>
 	</ul>
 
 
 
 	<ul class='launchpad_tiles'>
-	<li class='tile_2x2'>3</li>
-	<li></li>
-	<li></li>
-	<li></li>
+	<li>3.0</li>
+	<li class='tile_2x1'>3.01</li>
+	<li>3.02</li>
+	<li>3.03</li>
+	<li>3.04</li>
+	<li>3.05</li>
+	<li>3.06</li>
+	<li>3.07</li>
+	<li>3.08</li>
+	<li>3.09</li>
+	<li>3.10</li>
 	</ul>
 
 
 	<ul class='launchpad_tiles'>
-	<li class='tile_2x2'>4</li>
+	<li class='tile_2x1'>4</li>
 	<li></li>
 	<li></li>
 	<li></li>
@@ -122,7 +206,7 @@ $LPI.width(($lastCol.position().left + $lastCol.outerWidth() + 30)); //extra for
 
 
 	<ul class='launchpad_tiles'>
-	<li class='tile_2x2'>6</li>
+	<li class='tile_2x1'>6</li>
 	<li></li>
 	<li></li>
 	<li></li>
@@ -133,12 +217,12 @@ $LPI.width(($lastCol.position().left + $lastCol.outerWidth() + 30)); //extra for
 	<li>7</li>
 	<li></li>
 	<li></li>
-	<li class='tile_2x2'></li>
+	<li class='tile_2x1'></li>
 	</ul>
 
 
 	<ul class='launchpad_tiles'>
-	<li class='tile_2x2'>8</li>
+	<li class='tile_2x1'>8</li>
 	<li></li>
 	<li></li>
 	<li></li>
@@ -146,7 +230,7 @@ $LPI.width(($lastCol.position().left + $lastCol.outerWidth() + 30)); //extra for
 
 
 	<ul class='launchpad_tiles'>
-	<li class='tile_2x2'>9</li>
+	<li class='tile_2x1'>9</li>
 	<li></li>
 	<li></li>
 	<li></li>
