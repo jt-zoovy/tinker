@@ -64,7 +64,7 @@ function handleTileGroupResize()	{
 	console.log(" -> body.height: "+$('body').height());
 
 //handle some sizing.
-	$LP.height($(window).outerHeight(true) - $('#mastHead').outerHeight(true) - $('#mastFoot').outerHeight(true) - 20);  //set height of launchpad to maximize workspace. the xtra 20 is to solve a height issue that cause a window vertical scroll to appear. ### investigate when time permits.
+	$LP.height(($(window).outerHeight(true) - $('#mastHead').outerHeight(true) - $('#mastFoot').outerHeight(true) - 60));  //set height of launchpad to maximize workspace. the xtra 20 is to solve a height issue that cause a window vertical scroll to appear. ### investigate when time permits.
 	$LPI.height($LP.height()); //launchpad height does NOT use outerheight so no padding/margin conflicts
 	$LPI.width('10000px'); //set high so ul's dont wrap. then readjust so no extra scrolling later.
 
@@ -145,6 +145,7 @@ $(function() {
 
 	$( ".launchpad_tiles" ).sortable({
 		connectWith: '.launchpad_tiles',
+		helper : 'clone', //keeps click events in dragged item from firing on drag.
 		stop: function( event, ui ) {
 			handleTileGroupResize(); //adjust ul's and launchpad inner div for new # of tiles
 			$('.tileButton').hide();
