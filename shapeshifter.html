@@ -1,0 +1,361 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Untitled Document</title>
+
+<link rel="stylesheet" href="http://code.jquery.com/ui/1.10.2/themes/smoothness/jquery-ui.css" />
+
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.10.2/jquery-ui.min.js"></script>
+<script type="text/javascript" src="resources/mousewheel-3.0.6-min.js"></script>
+
+<script src="working/jquery.shapeshift-master/core/jquery.shapeshift.js"></script>
+<script src="working/jquery.shapeshift-master/core/vendor/jquery.ui.touch-punch.min.js"></script>
+
+<style type="text/css">
+
+body	{font-size:100%; padding:0; margin:0;}
+
+
+#launchpad {width:100%; overflow:hidden; background:#600; height:600px; padding-top:12px;}
+#launchpad:hover	{overflow:auto;}
+#launchpadInner	{position:relative; left:0; width:10000px; background:#006600; }
+
+.lpTileGroup {
+	position:relative; /* imp cuz tiles get absolutely positioned within this */
+	list-style:none;
+	width:650px;
+	float:left; margin-right:24px;
+	}
+
+.tile	{
+	height:150px; width:150px;
+	position:absolute;
+	background:#efefef;
+	}
+
+.tile:hover	{
+	-webkit-box-shadow:  2px 2px 4px 2px rgba(0, 0, 0, .3);
+	box-shadow:  2px 2px 4px 2px rgba(0, 0, 0, .3);	
+	}
+
+
+
+.tile[data-ss-colspan="2"] { width: 312px;}
+.tile[data-ss-rowspan="2"] { height: 312px;}
+
+ul.lpTileGroup li.ss-dragged-child {
+	cursor: move;
+	z-index: 9999;
+	opacity: .8;
+	transform:rotate(5deg);
+	-ms-transform:rotate(5deg); /* IE 9 */
+	-moz-transform:rotate(5deg); /* Firefox */
+	-webkit-transform:rotate(5deg); /* Safari and Chrome */
+	-o-transform:rotate(5deg); /* Opera */
+	}
+
+
+ul.lpTileGroup li.ss-placeholder-child {
+	background: transparent;
+	border: 0px;
+	position:absolute;
+	outline: 1px dashed red;
+	}
+
+ul.lpTileGroup li .position {
+	background: #DEDEDE;
+	border-radius: 4px;
+	display: none;
+	font-size: 30px;
+	height: 100%;
+	text-align: center;
+	width: 100%;
+	}
+
+ul.lpTileGroup li .position div {
+	padding-top: 40%;
+	}
+
+
+
+</style>
+
+
+
+<script type='text/javascript'>
+console.log('lets get it started in here.');
+function addMouseWheel2Launchpad(){
+	var $LPI = $('#launchpadInner'),
+	$LP = $('#launchpad')
+	
+//bind mousewheel event to launchpad.
+	$LP.bind('mousewheel', function(event, delta, deltaX, deltaY) {
+//		console.log("delta:"+delta+" deltaX: "+deltaX+" deltaY: "+deltaY);
+//		console.log("width: "+($LPI.width() - $LP.width())); //-1672
+//		console.log($LPI.position().left);
+
+
+		$LP.css('overflow','hidden'); //once mousescroll is used to slide content, ditch the scroll bar. wheel and scroll don't play well together in chrome.
+		if(delta > 0)	{ //mouse wheel is going up. move the CONTENT element from right to left.
+//			console.log(" -> going up: "+deltaY);
+			if($LPI.position().left > 0) { //already left-most. don't move it.
+				$LPI.css('left',0); //position correctly in case it's a negative #.
+				}
+			else	{
+				$LPI.css({'left':"+=20"}); //move inner div.
+				}
+			}
+		else	{
+//			console.log(" -> going down: "+deltaY);
+//mouse wheel is going down. move the content from left to right.
+			if((($LPI.width() - $LP.width()) * -1) > $LPI.position().left) {
+				//already right-most. no more scrolling.
+				}
+			else	{
+				$LPI.css({'left':"-=20"}); //move inner div.
+				}
+			}
+		});	
+	
+	
+	}
+
+function handleTileGroupResize()	{
+	
+	var $LP = $('#launchpad'),
+	$LPI = $('#launchpadInner'),
+	$stdTile = $('.tile:not([data-ss-colspan])',$LPI).not("[data-ss-rowspan]").first(), //first 1x1 tile is used to determine height and width.
+	tileWidth = $stdTile.outerWidth(true) + 12,
+	tileHeight = $stdTile.outerHeight(true) + 12;
+
+//	console.log("tileWidth: "+tileWidth);
+
+//handle some sizing.
+	$LP.height(($(window).outerHeight(true) - $('#mastHead').outerHeight(true) - $('#mastFoot').outerHeight(true) - 60));  //set height of launchpad to maximize workspace. the xtra is to solve a height issue that cause a window vertical scroll to appear. ### investigate when time permits.
+	$LPI.height($LP.height()); //launchpad height does NOT use outerheight so no padding/margin conflicts
+	$LPI.width('20000px'); //set high so ul's dont wrap. then readjust so no extra scrolling later.
+
+	var colsPerGroup = Math.floor(($LPI.height() / tileHeight));
+	$LPI.height(tileHeight * colsPerGroup); //ensures no vertical scrolling
+
+//	console.log("colsPerGroup: "+colsPerGroup);
+
+//resize ul to accomodate # and sizes of tiles.
+	$('ul.lpTileGroup',$LPI).each(function(){
+		var $ul = $(this),
+//varying tile sizes mean there could be orpans on rows. so a double-width is counted as 2.5
+//not uber-accurate, but should solve most cases.
+		count = $('li',$ul).length; //total number of spaces used. a full 4x4 grid would be 16. a full 4x4 + 1 2x2 tile would be 20.
+
+//add +1 for each double row or height.
+		count += ($('[data-ss-colspan="2"]',$ul).length * 1); //+1 for each double high. 
+		count += ($('[data-ss-rowspan="2"]',$ul).length * 1); //+1 for each double wide. 
+		count += ($('[data-ss-rowspan="2"][data-ss-colspan="2"]',$ul).length  * 1); //+1 for each double-double. (which got +2 for high and wide already)
+
+//		console.log('count: '+count);
+//		console.log('ul width: '+(count / colsPerGroup) * tileWidth);
+		$ul.width(((count / colsPerGroup) * tileWidth) + 200);
+
+		});
+	$('.lpTileGroup').trigger('ss-rearrange');
+	$lastCol = $('.lpTileGroup:last','#launchpadInner'); 
+	$LPI.width(($lastCol.position().left + $lastCol.outerWidth(true) + 30)); //for determining total width of all ul's + buffer.
+//	$('body').append(" -> width: "+($lastCol.position().left + $lastCol.outerWidth(true) + 30)+"<br>");
+
+	}
+
+
+function determineTileSize(size)	{
+	var r = {}, dimensions;
+	
+	if(size && size.indexOf('x') > 0)	{
+		dimensions = size.split('x');
+		r.w = (Number(dimensions[0]) <= 2 && Number(dimensions[0]) > 0) ? dimensions[0] : 1; //1 or 2 are currently acceptable widths. default to 1.
+		r.h = (Number(dimensions[1]) <= 2 && Number(dimensions[1]) > 0) ? dimensions[1] : 1; //1 or 2 are currently acceptable heights. default to 1.
+		}
+	else	{
+		r.w = 1;
+		r.h = 1;
+		}
+	return r;
+	}
+
+
+function addTile(obj)	{
+	if(obj)	{
+		var $tileGroup, size = {}, $tile;
+		// !!! be sure to implement using jqSelector here.
+		$tileGroup = $('#'+obj.tileGroup) || $('.lpTileGroup').last(); //by default, add to last group.
+		obj.className = obj.className || 'green'
+		size = determineTileSize(obj.size);
+
+		$tile = $("<li \/>").addClass('tile').addClass(obj.className);
+		if(size.w > 1)	{$tile.attr('data-ss-colspan',size.w)}
+		if(size.h > 1)	{$tile.attr('data-ss-rowspan',size.h)}
+		$tile.append(obj['$tileContents']);
+		$tile.appendTo($tileGroup);
+		
+		}
+	else	{
+		//error
+		}
+	}
+
+
+function myTile(vars)	{
+	var $tileContents = $("<div \/>").text('this is my tile');
+	return {'$tileContents':$tileContents,'tileGroup':'setup','className':'red','size':'1x1'};
+	}
+function myTile2(vars)	{
+	var $tileContents = $("<div \/>").html("<a href='#' onClick='alert(\"bob\");'>this is my tile<\/a>");
+	return {'$tileContents':$tileContents,'tileGroup':'orders','size':'2x1'};
+	}
+function myTile3(vars)	{
+	var $tileContents = $("<div \/>").text('this is my tile');
+	return {'$tileContents':$tileContents,'tileGroup':'setup','className':'blue','size':'2x2'};
+	}
+
+
+
+$(function() {
+	
+	addTile(myTile());
+	addTile(myTile2());
+	addTile(myTile3());
+	
+	addMouseWheel2Launchpad();
+	
+	$('.lpTileGroup').shapeshift({
+		'selector' : '.tile',
+		enableDrag : true,
+		enableCrossDrop : true,
+//		dragClone : true, //this will create a clone tile, not enact sortable clone method (which seems to be enabled)
+		minColumns: 2,
+		colWidth : 150 //best to set in case container has no children at init (likely to happen in UI)
+		});
+
+$(window).resize(function() {
+    delay(function(){
+      console.log('Browser resize. Adjust tilegroups and trigger shapeshifter rearrange');
+	  handleTileGroupResize();
+	  $('.lpTileGroup').trigger('ss-rearrange');
+      //...
+    }, 500);
+});
+
+
+
+
+	});
+
+//used for browser resize. binding a resize event triggers it throughout the resize, not just at the end.
+//so this is used to make sure the event is only triggered once.
+//set this as app.ext.admin.vars.delay during the launchpad init or admin init (depending on how that ends up being built).
+var delay = (function(){
+  var timer = 0;
+  return function(callback, ms){
+    clearTimeout (timer);
+    timer = setTimeout(callback, ms);
+  };
+})();
+</script>
+
+</head>
+
+<body>
+
+<div id='mastHead'>
+This is the website header. this size may change
+<button onClick="$('.lpTileGroup').width(850).trigger('ss-rearrange'); ">resize ul's</button>
+<button onClick="handleTileGroupResize(); $('.lpTileGroup').trigger('ss-rearrange');">handleTileGroupResize</button>
+</div>
+
+
+
+<section id='launchpad'>
+	<div id='launchpadInner'>
+
+	<ul class='lpTileGroup' id='setup'>
+		<li class='tile'>3.0</li>
+		<li class='tile' data-ss-colspan="2" data-ss-rowspan="2">3.01</li>
+		<li class='tile'>3.02</li>
+		<li class='tile'>3.03</li>
+		<li class='tile'>3.04</li>
+		<li class='tile' data-ss-rowspan="2">3.05</li>
+		<li class='tile'><a href='#' onClick='alert("boob")'>3.06</a></li>
+		<li class='tile'>3.07</li>
+		<li class='tile'>3.08</li>
+		<li class='tile'>3.09</li>
+		<li class='tile'>3.10</li>
+	</ul>
+
+
+	<ul class='lpTileGroup' id='orders'>
+		<li class='tile'>4.0</li>
+		<li class='tile' data-ss-colspan="2" data-ss-rowspan="2">4.01</li>
+		<li class='tile' data-ss-rowspan="2">4.02</li>
+		<li class='tile'>4.04</li>
+		<li class='tile'>4.03</li>
+		<li class='tile'>4.05</li>
+		<li class='tile'><a href='#' onClick='alert("boob")'>4.06</a></li>
+		<li class='tile'>4.07</li>
+		<li class='tile'>4.08</li>
+		<li class='tile'>4.09</li>
+		<li class='tile'>4.10</li>
+	</ul>
+
+	<ul class='lpTileGroup'>
+		<li class='tile'>4.0</li>
+		<li class='tile' data-ss-colspan="2">4.01</li>
+		<li class='tile'>4.02</li>
+		<li class='tile'>4.03</li>
+		<li class='tile'>4.04</li>
+		<li class='tile tile_2x2'>4.04b</li>
+		<li class='tile'>4.05</li>
+		<li class='tile'>4.06</li>
+		<li class='tile' data-ss-colspan="2">4.07</li>
+		<li class='tile'>4.08</li>
+		<li class='tile'>4.09</li>
+		<li class='tile'>4.10</li>
+	</ul>
+	
+	<ul class='lpTileGroup'>
+		<li class='tile'>5.0</li>
+		<li class='tile' data-ss-colspan="2">5.01</li>
+		<li class='tile'>5.02</li>
+		<li class='tile'>5.03</li>
+		<li class='tile'>5.04</li>
+		<li class='tile'>5.05</li>
+		<li class='tile'>5.06</li>
+		<li class='tile' data-ss-colspan="2">5.07</li>
+		<li class='tile'>5.08</li>
+		<li class='tile'>5.09</li>
+		<li class='tile'>5.10</li>
+	</ul>
+	
+	<ul class='lpTileGroup'>
+		<li class='tile'>6.0</li>
+		<li class='tile' data-ss-colspan="2">6.01</li>
+		<li class='tile'>6.02</li>
+		<li class='tile'>6.03</li>
+		<li class='tile'>6.04</li>
+		<li class='tile'>6.05</li>
+		<li class='tile'>6.06</li>
+		<li class='tile' data-ss-colspan="2">6.07</li>
+		<li class='tile'>6.08</li>
+		<li class='tile'>6.09</li>
+		<li class='tile'>6.10</li>
+	</ul>
+
+	</div>
+</section>
+
+<!--
+<div id='mastFoot'>
+Let's at least assume the possibility of a footer.
+</div>
+-->
+</body>
+</html>

@@ -1,0 +1,181 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Untitled Document</title>
+
+<link rel="stylesheet" href="http://code.jquery.com/ui/1.10.2/themes/smoothness/jquery-ui.css" />
+
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.10.2/jquery-ui.min.js"></script>
+<script type="text/javascript" src="resources/mousewheel-3.0.6-min.js"></script>
+<script src="working/masonry-master/masonry-master/jquery.masonry.js"></script>
+
+<style type="text/css">
+
+body	{font-size:100%; padding:0; margin:0;}
+
+ul {
+	list-style-type: none;
+	margin: 0px;
+	padding: 0px;
+	display:block;
+	float:left; margin-right:25px;
+	width:500px;
+	}
+
+.tile	{
+		-webkit-border-radius: 0px 35px 0px 35px;
+        border-radius: 0px 35px 0px 35px;
+		position: relative;
+		padding: 0px;
+		margin: 6px;
+		float: left;
+		}
+
+.tile:hover	{
+	-webkit-box-shadow:  2px 2px 4px 2px rgba(0, 0, 0, .3);
+	box-shadow:  2px 2px 4px 2px rgba(0, 0, 0, .3);	
+	}
+
+.tile_1x1	{width:150px; height:150px; background:#efefef;}
+.tile_2x1	{width:312px; height:150px; background:#ccc;}
+.tile_2x2	{width:312px; height:312px; background:#666;}
+.tile_1x2	{width:150px; height:312px; background:#333;}
+</style>
+
+
+
+<script type='text/javascript'>
+console.log('lets get it started in here.');
+function addMouseWheel2Launchpad(){
+	var $LPI = $('#launchpadInner'),
+	$LP = $('#launchpad')
+	
+//bind mousewheel event to launchpad.
+	$LP.bind('mousewheel', function(event, delta, deltaX, deltaY) {
+//		console.log("delta:"+delta+" deltaX: "+deltaX+" deltaY: "+deltaY);
+//		console.log("width: "+($LPI.width() - $LP.width())); //-1672
+//		console.log($LPI.position().left);
+
+
+		$LP.css('overflow','hidden'); //once mousescroll is used to slide content, ditch the scroll bar. wheel and scroll don't play well together in chrome.
+		if(delta > 0)	{ //mouse wheel is going up. move the CONTENT element from right to left.
+//			console.log(" -> going up: "+deltaY);
+			if($LPI.position().left > 0) { //already left-most. don't move it.
+				$LPI.css('left',0); //position correctly in case it's a negative #.
+				}
+			else	{
+				$LPI.css({'left':"+=20"}); //move inner div.
+				}
+			}
+		else	{
+//			console.log(" -> going down: "+deltaY);
+//mouse wheel is going down. move the content from left to right.
+			if((($LPI.width() - $LP.width()) * -1) > $LPI.position().left) {
+				//already right-most. no more scrolling.
+				}
+			else	{
+				$LPI.css({'left':"-=20"}); //move inner div.
+				}
+			}
+		});	
+	
+	
+	}
+
+$(function() {
+	$('.launchpad_tiles').masonry();
+	console.log(" -> length: "+$('.launchpad_tiles').length);
+	$( ".launchpad_tiles" ).sortable({
+		connectWith: '.launchpad_tiles',
+		helper : 'clone', //keeps click events in dragged item from firing on drag.
+		stop: function( event, ui ) {
+//			handleTileGroupResize(); //adjust ul's and launchpad inner div for new # of tiles
+			$('.tileButton').hide();
+			}
+		});
+	});
+
+
+
+</script>
+
+</head>
+
+<body>
+
+<div id='mastHead'>This is the website header. this size may change</div>
+
+
+
+<section id='launchpad'>
+	<div id='launchpadInner'>
+
+	<ul class='launchpad_tiles'>
+		<li class='tile tile_1x1'>3.0</li>
+		<li class='tile tile_2x1'>3.01</li>
+		<li class='tile tile_1x1'>3.02</li>
+		<li class='tile tile_1x2'>3.03</li>
+		<li class='tile tile_1x1'>3.04</li>
+		<li class='tile tile_1x1'>3.05</li>
+		<li class='tile tile_1x1'><a href='#' onClick='alert("boob")'>3.06</a></li>
+		<li class='tile tile_1x1'>3.07</li>
+		<li class='tile tile_1x1'>3.08</li>
+		<li class='tile tile_1x1'>3.09</li>
+		<li class='tile tile_1x1'>3.10</li>
+	</ul>
+	
+	<ul class='launchpad_tiles'>
+		<li class='tile tile_1x1'>4.0</li>
+		<li class='tile tile_2x1'>4.01</li>
+		<li class='tile tile_1x1'>4.02</li>
+		<li class='tile tile_1x1'>4.03</li>
+		<li class='tile tile_1x1'>4.04</li>
+		<li class='tile tile_2x2'>4.04b</li>
+		<li class='tile tile_1x1'>4.05</li>
+		<li class='tile tile_1x1'>4.06</li>
+		<li class='tile tile_2x1'>4.07</li>
+		<li class='tile tile_1x1'>4.08</li>
+		<li class='tile tile_1x1'>4.09</li>
+		<li class='tile tile_1x1'>4.10</li>
+	</ul>
+	
+	<ul class='launchpad_tiles'>
+		<li class='tile tile_1x1'>5.0</li>
+		<li class='tile tile_2x1'>5.01</li>
+		<li class='tile tile_1x1'>5.02</li>
+		<li class='tile tile_1x1'>5.03</li>
+		<li class='tile tile_1x1'>5.04</li>
+		<li class='tile tile_1x1'>5.05</li>
+		<li class='tile tile_1x1'>5.06</li>
+		<li class='tile tile_2x1'>5.07</li>
+		<li class='tile tile_1x1'>5.08</li>
+		<li class='tile tile_1x1'>5.09</li>
+		<li class='tile tile_1x1'>5.10</li>
+	</ul>
+	
+	<ul class='launchpad_tiles'>
+		<li class='tile tile_1x1'>6.0</li>
+		<li class='tile tile_2x1'>6.01</li>
+		<li class='tile tile_1x1'>6.02</li>
+		<li class='tile tile_1x1'>6.03</li>
+		<li class='tile tile_1x1'>6.04</li>
+		<li class='tile tile_1x1'>6.05</li>
+		<li class='tile tile_1x1'>6.06</li>
+		<li class='tile tile_2x1'>6.07</li>
+		<li class='tile tile_1x1'>6.08</li>
+		<li class='tile tile_1x1'>6.09</li>
+		<li class='tile tile_1x1'>6.10</li>
+	</ul>
+
+	</div>
+</section>
+
+<!--
+<div id='mastFoot'>
+Let's at least assume the possibility of a footer.
+</div>
+-->
+</body>
+</html>
