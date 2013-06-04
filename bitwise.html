@@ -1,0 +1,31 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>Untitled Document</title>
+
+
+
+<script type="text/javascript">
+
+function getNewslettersTF (newsint,val)	{
+	//so what's happening here...   the tostring converts the int into binary. split/reverse/join reverse the order, changing 1000 (for 8) into 0001
+	var B = Number(newsint).toString(2).split('').reverse().join(''); //binary. converts 8 to 1000 or 12 to 1100.
+	console.log(" -> Binary of flags: "+B);
+	console.log(" -> from end: "+(B & val));
+	return B.charAt(val - 1) == 1 ? true : false; //1
+	}
+
+
+</script>
+
+
+</head>
+
+<body onload="getNewslettersTF('8',4);">
+
+
+
+
+</body>
+</html>
