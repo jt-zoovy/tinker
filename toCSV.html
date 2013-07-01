@@ -20,7 +20,9 @@ var response = {"month":"1","_msgs":1,"_msg_1_id":0,"key":"CREATED","_rcmd":"adm
 var L = response['@BODY'].length;
 var csv = "";
 for(var i = 0; i < L; i += 1)	{
-	csv += JSON.stringify(response['@BODY'][i],function(a,b){return b += "\r\n"});
+	csv += $.map(response['@BODY'][i],function(val){
+		return '"'+((val == null) ? '' : val)+'"'; //don't return 'null' into report.
+		})+"\n"
 	}
 
 document.write("<pre>"+csv+"<\/pre>");
