@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<!--
+Copyright 2011 Google Inc.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+     http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+
+Author: Eric Bidelman (ericbidelman@chromium.org)
+-->
+<html>
+<head>
+<meta charset="utf-8" />
+<meta http-equiv="X-UA-Compatible" content="chrome=1" />
+<title>a[download]</title>
+
+
+
+<link rel="stylesheet" type="text/css" href="jquery-ui-1.9.2.custom.min.css"/>
+
+
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+<script src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.9.2/jquery-ui.min.js"></script>
+
+<script type='text/javascript'>
+
+function downloadBase64File()	{
+	const MIME_TYPE = 'application/octet-stream,base64';
+	var base64 = new Array("This is the base 64 content");
+
+	var bb = new Blob(base64, {type: MIME_TYPE}); alert(bb);
+	
+//a.dataset.downloadurl = [MIME_TYPE, a.download, a.href].join(':');
+	var $a = $('<a>',{'download':"filename.txt","href":window.URL.createObjectURL(bb)});
+	$a.addClass('dragout').attr('data-downloadurl',[MIME_TYPE, $a.attr('download'), $a.attr('href')].join(':')).text('download ready').on('click',function(){
+		var a = this;
+		console.log('got here');
+		a.textContent = 'Downloaded';
+		a.dataset.disabled = true;
+		// Need a small delay for the revokeObjectURL to work properly.
+		//revokeObjectURL causes browser to drop reference to the file.
+		setTimeout(function() {
+			window.URL.revokeObjectURL(a.href);
+			}, 1500);
+		});
+	$a.appendTo('body');
+	}
+
+</script>
+
+</head>
+<body>
+http://html5-demos.appspot.com/static/a.download.html
+
+
+<button onClick="downloadBase64File()">Download File</button>
+
+<br><br>
+<section>
+  <div id="container">
+    <div contenteditable>My epic novel that I don't want to lose.</div>
+    <input type="text" value="MyFile.txt" placeholder="filename.txt">
+    <button onclick="downloadFile()">Create file</button> <output></output>
+    <aside id="download-help">
+      <ul>
+        <li>This link was created using a <code>blob:</code> URL
+        ( <a href="http://www.html5rocks.com/en/tutorials/workers/basics/#toc-inlineworkers-bloburis" target="_blank">huh?</a> ).
+        It contains the <code>download</code> attribute, which means clicking it will
+        force the browser to download the resource rather than navigating to it.</li>
+        <li>In Chrome, you can also drag this link out of the browser tab and the file
+        will be saved. ( <a href="http://www.thecssninja.com/javascript/gmail-dragout" target="_blank">huh?</a> )</li>
+      </ul>
+    </aside>
+  </div>
+</section>
+
+<script>
+var container = document.querySelector('#container');
+var typer = container.querySelector('[contenteditable]');
+var output = container.querySelector('output');
+
+const MIME_TYPE = 'application/octet-stream,base64';
+
+
+var cleanUp = function(a) {
+  a.textContent = 'Downloaded';
+  a.dataset.disabled = true;
+  // Need a small delay for the revokeObjectURL to work properly.
+  //revokeObjectURL causes browser to drop reference to the file.
+  setTimeout(function() {
+    window.URL.revokeObjectURL(a.href);
+  }, 1500);
+};
+
+var downloadFile = function() {
+  window.URL = window.webkitURL || window.URL;
+
+  var prevLink = output.querySelector('a');
+  if (prevLink) {
+    window.URL.revokeObjectURL(prevLink.href);
+    output.innerHTML = '';
+  }
+
+  var bb = new Blob([typer.textContent], {type: MIME_TYPE});
+
+  var a = document.createElement('a');
+  a.download = container.querySelector('input[type="text"]').value;
+  a.href = window.URL.createObjectURL(bb);
+  a.textContent = 'Download ready';
+
+  a.dataset.downloadurl = [MIME_TYPE, a.download, a.href].join(':');
+  a.draggable = true; // Don't really need, but good practice.
+  a.classList.add('dragout');
+
+  output.appendChild(a);
+
+  a.onclick = function(e) {
+    if ('disabled' in this.dataset) {
+      return false;
+    }
+
+    cleanUp(this);
+  };
+};
+</script>
+
+</body>
+</html>
