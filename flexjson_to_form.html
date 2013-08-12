@@ -1,0 +1,265 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Untitled Document</title>
+
+
+
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+<script src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.9.2/jquery-ui.min.js"></script>
+
+<script type="text/javascript">
+
+var myFlex = [
+//	{'id':'zoovy:prod_image99'},
+	{'id':'zoovy:prod_image1'},
+	{'id':'zoovy:grp_children'},
+	{'id':'zoovy:base_price'},
+	{'id':'zoovy:prod_name'},
+	{'id':'zoovy:prod_desc'},
+	{'id':'zoovy:prod_cpsiawarning',
+	'options' : [ 
+		{ 'p' : '- Please Select -', 'v' : '' },
+		{ 'p' : 'Choking Hazard Balloon', 'v' : 'choking_hazard_balloon' },
+		{ 'p' : 'Choking Hazard contains a marble', 'v' : 'choking_hazard_contains_a_marble' },
+		{ 'p' : 'Choking Hazard contains a small ball', 'v' : 'choking_hazard_contains_small_ball' },
+		{ 'p' : 'Choking Hazard is a marble', 'v' : 'choking_hazard_is_a_marble' },
+		{ 'p' : 'Choking Hazard is a small ball', 'v' : 'choking_hazard_is_a_small_ball' },
+		{ 'p' : 'Choking Hazard small parts', 'v' : 'choking_hazard_small_parts' },
+		{ 'p' : 'No Warning Applicable', 'v' : 'no_warning_applicable' }
+		],
+	'title' : 'CPSIA Warning',
+	'type' : 'select'
+	}
+	]
+
+//popFlex should be replaced with the app.data reference for ALL flex fields.
+var popFlex = {
+	"zoovy:prod_mfgid":{"index":"prod_mfgid","popular":1,"sku":1,"type":"textbox","title":"Product Manufacturer ID"},
+	"is:sale":{"popular":1,"bit":12,"type":"checkbox","panel":"xsell","tag":"IS_SALE"},
+	"zoovy:prod_image1":{"popular":1,"sku":1,"hint":"image1 will also be used as a thumbnail by default","title":"Product Image 1","type":"image"},
+	"zoovy:base_weight":{"popular":1,"type":"textbox","title":"Shipping Weight"},
+	"zoovy:prod_ean":{"index":"ean","popular":1,"sku":1,"hint":"EAN (European Article Number is a barcoding standard which is a superset of the original 12-digit UPC system)","type":"textbox","title":"Product EAN"},
+	"zoovy:prod_detail":{"index":"detail","popular":1,"title":"Product Detail Description","type":"textarea","rows":4,"cols":50},
+	"zoovy:prod_image8":{"popular":1,"title":"Product Image 8","type":"image"},
+	"is:preorder":{"popular":1,"bit":8,"type":"checkbox","panel":"xsell","tag":"IS_PREORDER"},
+	"is:colorful":{"popular":1,"bit":4,"type":"checkbox","panel":"general","tag":"IS_COLORFUL"},
+	"is:needreview":{"popular":1,"bit":1,"type":"checkbox","panel":"general","tag":"IS_NEEDREVIEW"},
+	"zoovy:keywords":{"index":"keywords","popular":1,"type":"textarea","title":"Product Keywords","rows":4,"cols":50},
+	"youtube:videoid":{"popular":1,"type":"textbox","title":"YouTube Embedded Video ID","size":20},
+	"is:fresh":{"popular":1,"bit":0,"type":"checkbox","panel":"general","tag":"IS_FRESH"},
+	"zoovy:prod_image6":{"popular":1,"title":"Product Image 6","type":"image"},
+	"amz:asin":{"index":"asin","popular":1,"sku":1,"src":"2bhip:A31-00","title":"Amazon ASIN for the product","type":"asin"},
+	"is:haserrors":{"popular":1,"bit":2,"type":"checkbox","panel":"general","tag":"IS_HASERRORS"},
+	"zoovy:grp_parent":{"index":"grp_parent","popular":1,"hint":"When populated indicates this child belongs to a group of items. This field must contain the parent product record","max":1,"title":"Group Parent","type":"finder"},
+	"zoovy:prod_features":{"index":"prod_features","popular":1,"hint":"Used by Amazon - should contain a bulleted list","type":"textarea","title":"Product Features","rows":4,"cols":50},
+	"is:bestseller":{"popular":1,"bit":11,"type":"checkbox","panel":"xsell","tag":"IS_BESTSELLER"},
+	"zoovy:prod_image4":{"popular":1,"sku":1,"title":"Product Image 4","type":"image"},
+	"zoovy:related_products":{"index":"related_products","popular":1,"title":"list of related product ids","type":"finder"},
+	"zoovy:prod_image7":{"popular":1,"title":"Product Image 7","type":"image"},
+	"zoovy:base_price":{"index":"base_price","popular":1,"type":"currency","title":"Base Price"},
+	"zoovy:prod_image2":{"popular":1,"sku":1,"title":"Product Image 2","type":"image"},
+	"is:specialorder":{"popular":1,"bit":10,"type":"checkbox","panel":"xsell","tag":"IS_SPECIALORDER"},
+	"is:sizeable":{"popular":1,"bit":5,"type":"checkbox","panel":"general","tag":"IS_SIZEABLE"},
+	"is:discontinued":{"popular":1,"bit":9,"type":"checkbox","panel":"xsell","tag":"IS_DISCONTINUED"},
+	"zoovy:prod_isbn":{"maxlength":13,"index":"isbn","popular":1,"sku":1,"hint":"Used to describe Media.","title":"ISBN","type":"text","size":13},
+	"is:download":{"popular":1,"bit":6,"type":"checkbox","panel":"general","tag":"IS_DOWNLOAD"},
+	"zoovy:prod_condition":{"index":"prod_condition","popular":1,"hint":"Defaults to \"NEW\"","type":"textbox","title":"Product Condition"},
+	"zoovy:prod_keywords":{"popular":1,"src":"camdenbar:6X6CL","type":"legacy"},
+	"zoovy:prod_mfg":{"index":"prod_mfg","popular":1,"type":"textbox","title":"Product Manufacturer"},
+	"zoovy:prod_image5":{"popular":1,"sku":1,"title":"Product Image 5","type":"image"},
+	"zoovy:prod_name":{"maxlength":200,"index":"prod_name","popular":1,"title":"Product Title","type":"text","size":60},
+	"zoovy:prod_image3":{"popular":1,"sku":1,"title":"Product Image 3","type":"image"},
+	"is:newarrival":{"popular":1,"bit":14,"type":"checkbox","panel":"xsell","tag":"IS_NEWARRIVAL"},
+	"zoovy:grp_children":{"index":"grp_children","popular":1,"hint":"When populated indicates this is a parent item. The contents are a comma separated list of items in this container","title":"Group Children","type":"finder"},
+	"zoovy:grp_type":{"popular":1,"options":[{"p":"None","v":""},
+	{"p":"PARENT","v":"PARENT"},
+	{"p":"CHILD","v":"CHILD"}],"hint":"When populated indicates group type (PARENT or CHILD)","title":"Group Type","type":"select"},
+	"zoovy:prod_desc":{"index":"description","popular":1,"title":"Product Description","type":"textarea","rows":4,"cols":50},
+	"is:shipfree":{"popular":1,"bit":13,"type":"checkbox","panel":"xsell","tag":"IS_SHIPFREE"}
+	}
+
+
+
+var flexTypes = {
+	'textbox' : { 'type' : 'text'},
+	'text' : { 'type' : 'text'},
+	'textarea' : { 'type' : 'textarea'},
+	'textlist' : { 'type' : 'textarea'},
+	'image' : { 'type' : 'image'},
+	'finder' : { 'type' : 'button'},
+	'keyword' : { 'type' : 'textarea'},
+	'currency' : { 'type' : 'number'},
+	'number' : { 'type' : 'number'},
+	'weight' : { 'type' : 'text'},
+	'checkbox' : { 'type' : 'cb'},
+	'digest' : { 'type' : 'hidden'},
+	'special' : { 'type' : 'hidden'},
+	'boolean' : { 'type' : 'cb'},
+	'chooser/counter' : { 'type' : 'text'},
+	'ebay/storecat' :  {'type':'ebaycategorychooser'},
+	'ebay/attributes' : { 'type' : 'text'},
+	'overstock/category' : { 'type' : 'text'},
+	'select' : {'type':'select'},
+	'selectreset' : { 'type' : 'select'}
+	}
+
+
+function buildInput(type,data,prodData)	{
+//	console.log('TYPE: '+type); console.dir(data);
+	var $r = $("<label \/>").data(data);
+	prodData = prodData || {'%attribs':{}};
+	$r.append($("<span \/>").attr('title',data.id).text(data.title || data.id));
+	if(data.hint)	{$r.find('span').append($("<span class='toolTip' title='"+data.hint+"'>?<\/span>"))}
+	
+	if(type == 'textarea')	{
+		var $textarea = $("<textarea \/>",{'name':data.id,'rows':data.rows || 5, 'cols':data.cols || 40});
+		
+		$textarea.val(prodData['%attribs'][data.id] || "");
+		if(data.type == 'textlist')	{
+			if(data.startsize)	{
+				$textarea.attr('rows',data.startsize);
+				$textarea.on('focus',function(){
+					$textarea.attr('rows',$data.max || 10);
+					}).on('blur',function(){
+						$textarea.attr('rows',data.rows || 5)
+						});
+				$('.toolTip',$r).append(" Only 1 entry per line.");
+				}
+			}
+		
+		$textarea.appendTo($r);
+		}
+	else if(type == 'select')	{
+		var $select = $("<select \/>",{'name':data.id});
+		var L = data.options.length;
+		for(var i = 0; i < L; i += 1)	{
+			$select.append($("<option \/>",{'value':data.options[i].v}).text(data.options[i].p));
+			}
+		$select.val(prodData['%attribs'][data.id] || "");
+		$select.appendTo($r);
+		}
+	else if(type == 'button')	{
+		var $btn = $("<button \/>").text(data.title || data.id);
+		$btn.button();
+		if(data.action == 'finder')	{
+			if(prodData.pid)	{
+				$btn.button().on('click',function(event){
+					event.preventDefault();
+					app.ext.admin.a.showFinderInModal('PRODUCT',prodData.pid,data.id);
+					})
+				}
+			else	{
+				$btn.button('disable');
+				}
+			}
+		else	{
+			$btn.button('disable');
+			}
+		$btn.appendTo($r);
+		}
+	else if(type == 'image')	{
+		var $input = $("<input \/>",{'type':'hidden','name':data.id}).val(prodData['%attribs'][data.id]);
+		var $image = $("<img \/>",{'src':prodData['%attribs'][data.id] || 'i/imagenotfound','width':'75','height':'75','alt':''});
+		//return false; 				
+		$input.appendTo($r);
+		$image.appendTo($r);
+		
+		$("<button \/>").on('click',function(event){
+			event.preventDefault();
+			mediaLibrary($image,$input,'');
+			}).text('Select').appendTo($r);
+		
+		$("<button \/>").on('click',function(event){
+			event.preventDefault();
+			$image.attr('src','/images/blank.gif');
+			$input.val('');
+			}).text('Clear').appendTo($r);
+		}
+	else	{
+		var $input = $("<input \/>",{'type':type,'name':data.id});
+		if(type == 'checkbox' && prodData['%attribs'][data.id])	{
+			$input.prop('checked','checked')
+			} // !!! hhhmmmm may need to tune this.
+		else {
+			$input.val(prodData['%attribs'][data.id] || "");
+			$input.attr('size',data.size || 20); //do this early, then change for specific types, if necessary.
+			if(data.type == 'currency')	{
+				$input.attr({'step':'.01','min':'0.00','size':6})
+				}
+			
+			if(type == 'number' || data.type == 'weight')	{
+				$input.attr('size', data.size || 6); //default to smaller input for numbers, if size not set.
+				}
+			
+			if(data.maxlength)	{
+				$input.attr('maxlength',data.maxlength);
+				}
+			
+			}
+		$input.appendTo($r);
+		}
+	
+	return $r;
+	}
+
+
+function flex2JQInputs(thisFlex,prodData)	{
+	var r = $("<div \/>");; //what is returned. Either a chunk of html or an error message.
+	if(thisFlex && typeof thisFlex === 'object')	{
+		
+		var	L = thisFlex.length;
+		prodData = prodData || {};
+			
+		
+		for(var i = 0; i < L; i += 1)	{
+			if(thisFlex[i].id)	{
+				console.log("ID: "+thisFlex[i].id);
+				var gfo = popFlex[thisFlex[i].id] || {}; //Global Flex Object. may be empty for custom attributes.
+				var type = thisFlex[i].type || gfo.type;
+				if(type && flexTypes[type] && flexTypes[type].type)	{
+					r.append(buildInput(flexTypes[type].type,$.extend(true,{},gfo,thisFlex[i]),prodData)) //thisFlex merged into gfo with precedence set of thisFlex attributes. 
+					}
+				else	{
+					console.log(' -> no valid editor.');
+					r.append($("<div \/>").addClass('label').text('Could not find valid editor for this input. flex input type = '+type+' and typeof flexTypes[type] = '+typeof flexTypes[type]));					
+					}
+				}
+			else	{
+				console.log(' -> no ID set');
+				r.append($("<div \/>").addClass('label').text('No ID set for this input.'));
+				}
+			$('.toolTip',r).tooltip();
+			}
+		}
+	else	{
+		r.append($("<div \/>").addClass('label').text('In flex2Form, thisFlex was either empty or not an object.'));// !!! anymessage this.
+		}
+	return r;
+	}
+
+
+</script>
+
+
+
+<style type='text/css'>
+
+.flexEditor label, .flexEditor .label	{display:block; margin:20px;}
+.toolTip	{color:#F60;}
+</style>
+
+<link rel="stylesheet" type="text/css" href="jquery-ui-1.9.2.custom.min.css"/>
+
+</head>
+
+<body onLoad="$('#bob').append(flex2JQInputs(myFlex,{'%attribs':{'zoovy:base_price':'4.95','zoovy:prod_image1':'outfit_standing','zoovy:prod_cpsiawarning':'choking_hazard_is_a_small_ball'}}));">
+
+
+<div id='bob' class='flexEditor'></div>
+
+
+
+</body>
+</html>
