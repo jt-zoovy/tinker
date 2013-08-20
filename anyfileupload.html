@@ -1,0 +1,65 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>Untitled Document</title>
+
+	<style>
+
+	#box {
+		background-color: #f60;
+		width: 208px;
+		border: 1px solid #f60;
+		-webkit-border-radius: 6px;
+		-moz-border-radius: 6px;
+		border-radius: 6px;
+		padding-bottom: 10px;
+		float: left;
+	}
+	#box p {
+		font-size: 10px;
+		padding: 5px;
+		margin: 0px;
+	}
+	#drop {
+		width: 208px;
+		height: 200px;
+		background-color: #f90;
+	}
+	#status {
+		width: 200px;
+		height: 25px;
+		font-size: 10px;
+		color: #fff;
+		padding: 5px;
+	}
+	#list {
+		width: 210px;
+		font-size: 10px;
+		float: left;
+		margin-left: 10px;
+	}
+	.addedIMG {
+		width: 100px;
+		height: 100px;
+	}
+	</style>
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
+<script src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.10.3/jquery-ui.min.js"></script>
+<script type="text/javascript" src="anyfileupload.js"></script>
+
+
+
+</head>
+
+<body onload="$('#drop').anyfiledrop({
+	'status' : $('#status'),
+	'thumbList' : $('#list')
+	});">
+	<div id="box">
+		<div id="status"></div>
+		<div id="drop"></div>
+	</div>
+	<div id="list"></div>
+</body>
+</html>
