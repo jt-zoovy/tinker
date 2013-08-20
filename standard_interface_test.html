@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>Any Message</title>
+
+
+
+<link rel="stylesheet" type="text/css" href="jquery-ui-1.9.2.custom.min.css"/>
+
+
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
+<script src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.10.2/jquery-ui.min.js"></script>
+
+
+
+<script>
+
+
+handleSUIPlugins : function($target)	{
+	$('.applyAnytable',$target).anytable();
+	$('.applyAnycb',$target).anycb();
+	
+	}
+
+
+
+SUICreate = function($target,vars)	{
+	var r = false; //what is returned. will be the results table element if able to create dualModeInterface
+	vars = vars || {};
+	if($target instanceof jQuery && vars.tbodyDatabind)	{
+//set up the defaults.
+		vars.showLoading = (vars.showLoading === false) ? false  : true; //to be consistent, default this to on.
+		vars.showLoadingMessage = vars.showLoadingMessage || "Fetching Content...";
+		vars.anytable = (vars.anytable === false) ? false  : true;
+		vars.handleAppEvents = (vars.handleAppEvents === false) ? false  : true;
+
+		var $DM = $("<div \/>"); //used as a holder for the content. It's children are appended to $target. Allows DOM to only be updated once.
+
+		$DM.anycontent({'templateID':'dualModeTemplate','showLoading':false}); //showloading disabled so it can be added AFTER content added toDOM (works better)
+		var
+			$DMI = $("[data-app-role='dualModeContainer']",$DM),
+			$tbody = $("[data-app-role='dualModeListTbody']:first",$DM),
+			$table = $(".dualModeListTable:first",$DM);
+		
+		$DMI.attr('id','DMI_'+app.u.guidGenerator()); //apply an ID. this allows for content in a dialog to easily reference it's parent DMI.
+		
+//if set, build thead.
+		if(vars.thead && typeof vars.thead == 'object')	{
+//find and get a copy of the template used in the loadsTemplate. use it to determine which headers should be hidden in midetail mode.
+			var bindData = app.renderFunctions.parseDataBind(vars.tbodyDatabind);
+			var $tmp;
+			if(app.templates[bindData.loadsTemplate])	{
+				$tmp =  app.templates[bindData.loadsTemplate].clone(); //always clone to leave original unmolested.
+				}
+			else if($(app.u.jqSelector('#',bindData.loadsTemplate)).length)	{
+				app.model.makeTemplate($(app.u.jqSelector('#',bindData.loadsTemplate)),bindData.loadsTemplate);
+				$tmp =  app.templates[bindData.loadsTemplate].clone();
+				}
+			else	{}//empty tmp means no check to add hide in detail mode class.
+
+			var
+				L = vars.thead.length,
+				$Thead = $("[data-app-role='dualModeListThead'] tr:first",$DM);
+
+			for(var i = 0; i < L; i += 1)	{
+//looks at corresponding td in loadsTemplate (if set) and applies hide class (
+				$('<th \/>').addClass(($tmp && $("td:nth-child("+i+")",$tmp).hasClass('hideInDetailMode')) ? "hideInDetailMode" : "").text(vars.thead[i]).appendTo($Thead);
+				}
+			}// thead loop
+		else if(vars.thead)	{
+			app.u.dump("In admin.u.buildDualModeInterface, vars.thead was passed but not in a valid format. Expecting an array.",warn)
+			}
+		else	{} //no thead. that's fine.
+
+		if(vars.className)	{$DMI.addClass(vars.className)}
+		
+		if(vars.tbodyDatabind)	{
+			$tbody.attr('data-bind',vars.tbodyDatabind);
+			}
+
+		if(vars.cmdVars && vars.cmdVars._cmd)	{
+			$DMI.data('cmdVars',vars.cmdVars);
+			vars.cmdVars._tag = vars.cmdVars._tag || {};
+			vars.cmdVars._tag.callback = 'anycontent';
+			vars.cmdVars._tag.jqObj = $table;
+			app.model.addDispatchToQ(vars.cmdVars,'mutable');
+			}
+
+			
+		if(vars.header)	{
+			$("[data-app-role='dualModeListHeader']:first",$DM).text(vars.header);
+			}
+
+		if(vars.controls)	{
+			$("[data-app-role='dualModeListControls']:first",$DM).append(vars.controls);
+			}
+		else	{
+			$("[data-app-role='dualModeListControls']:first",$DM).addClass('displayNone');
+			}
+
+//if set, build buttons.
+		if(typeof vars.buttons === 'object')	{
+//						app.u.dump(' -> buttons are an object');
+			var
+				BL = vars.buttons.length,
+				$buttonContainer = $("[data-app-role='dualModeListButtons']:first",$DM);
+
+			for(var i = 0; i < BL; i += 1)	{
+				$buttonContainer.append(vars.buttons[i]);
+				}
+			}// thead loop
+
+		if(vars.handleAppEvents)	{
+			app.u.handleAppEvents($DM,{'$context':$DM.children().first()}); //
+			}
+
+		$DM.children().appendTo($target);
+//showLoading is applied to the table, not the parent, because that's what is rturned and what anycontent is going to be run on (which will run hideLoading).
+		if(vars.showLoading)	{
+			$table.showLoading({"message":vars.showLoadingMessage || undefined});
+			}
+		//needs to be done after table added to DOM.
+		if(vars.anytable)	{
+			$table.anytable();
+			}
+
+		r = $table //the table gets returned
+
+		}
+	else	{
+		$('#globalMessaging').anymessage({});
+		}
+	return r;
+	}
+
+
+</script>
+
+
+
+
+</head>
+
+<body>
+
+
+
+
+
+
+<div id='someContentArea'>
+
+</div>
+
+
+
+
+
+
+<div id='dualModeTemplate' class='dualModeContainer displayNone' data-app-role='dualModeContainer' data-app-mode='list'>
+
+	<section class='dualModeDetail' data-app-role='dualModeDetail'></section>
+
+	<section class='dualModeList' data-app-role='dualModeList'>
+		<div class='ui-widget-header ui-corner-top'><!-- do NOT add clearfix to this. screws up right column of panels -->
+			<div class='floatRight smallPadding' data-app-role='dualModeListButtons'>
+			<button data-app-event='admin|toggleDualMode'>Toggle between list and detail view</button>
+			</div>
+			
+			<h1 class='dualModeHeader' data-app-role='dualModeListHeader'><!-- title will go here --></h1>
+		</div>
+		<div class='ui-state-default dualModeListControls clearfix' data-app-role='dualModeListControls'>
+		<!-- forms can go here (search) -->
+		</div>
+		
+		<div class='ui-widget-content ui-corner-bottom stdPadding'>
+			<div class='dualModeListMessaging marginBottom'></div>
+			<div class='dualModeListContent' data-app-role='dualModeContent'>
+				<table class='gridTable fullWidth dualModeListTable' data-app-role='dualModeListTable'>
+					<thead class='dualModeListThead' data-app-role='dualModeListThead'>
+						<tr></tr>
+					</thead>
+					<tbody class='dualModeListTbody' data-app-role='dualModeListTbody'></tbody>
+				</table>
+			</div>
+
+		</div>
+	</section>
+</div>
+
+
+
+
+
+
+<h4>Notes:</h4>
+<pre>
+The UI object should have 'cmd' and also '@cmds' (optional) which would be subsequential data.
+   most likely, the data would only need to be fetched once. (price schedules, for example)
+
+The UI remove should, by default:
+    replace all the dialog buttons with just one: 'close', when remove is successfully completed.
+	empty the contents (messaging) of the dialog.
+
+
+New function 
+data is a data object.  needed is ['pid'] or ['orderid'] or ['cid','orderid'] (ok, bad example on the third, but you get the idea)
+could integrate some defaults, potentially.  support for 'product' as need and it would automatically look for 'pid'.
+dataHasWhatINeed(data,need)	{
+	if(needed)	{
+		}
+	else	{
+		if(dataType == 'product')	{}
+		}
+	}
+
+each of the cmds will need to support a function that has some set params ($DMI or $D) and allows extra formatting (such as anypanels or drag n drop) after the content has rendered.
+
+
+
+create function should support a 'refresh SUI list' that tells it to refresh the list after a successful create.
+remove should do the same.
+Remove should support 'enmasse' or 'individual'  Private files would be a good example of enmasse. invididual would open 'confirm'.
+
+</pre>
+</body>
+</html>
