@@ -1,0 +1,101 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>Untitled Document</title>
+
+
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
+
+<script>
+
+var zGlobals = {};
+
+function newApp(params)	{
+	var self = false; //the instance of this object, if validation is passed.
+	if(typeof Prototype == 'object')	{
+		alert("Oh No! you appear to have the prototype ajax library installed. This library is not compatible. Please change to a non-prototype theme (2011 series).");
+		}
+//zglobals is not required in the UI, but is for any
+	else if(typeof zGlobals != 'object' && (params && params.vars && params.vars.thisSessionIsAdmin))	{
+//zGlobals not required in an admin session.
+		alert("Uh Oh! A  required include (config.js) is not present. This document is required.");
+		}
+	else	{
+//		this.initialize(params);
+		self = this;
+		jQuery.extend(true,self,controller(self)); //extend self, not newApp.prototype, so that any variables/functions inside this instance are unique to the instance.
+		self.initialize();
+		}
+	return self;
+	}
+
+
+function controller(self)	{
+	return {
+		initialize : function()	{
+			//set some vars. work some magic. do something.
+			},
+		b : function(){return self.a},
+		a : '42'
+		}
+	}
+
+function model(self)	{
+	return {
+		version : "201318",
+		fetchExtension : function(extObjItem)	{
+//			app.u.dump('BEGIN model.fetchExtention ['+extObjItem.namespace+']');
+			var errors = '';
+			var url = extObjItem.filename+"?_v="+app.vars.release;
+			var namespace = extObjItem.namespace; //for easy reference.
+//			app.u.dump(' -> url = '+url);
+		
+			var ajaxLoadExt = $.ajax({
+				url: url,
+///				async: 0, //testing... 
+				dataType: 'script',
+				success: function(data) {
+	//The 'success' can be executed prior to the script finishing loading so the heavy lifting happens in 'complete'.
+//					app.u.dump(" -> EXTCONTROL Got to success");
+					},
+				complete: function(data)	{
+//					app.u.dump(" -> EXTCONTROL got to complete for "+namespace);
+//					app.u.dump(" -> status = "+data.statusText);
+//hhhhmmm... was originally just checking success. now it checks success and OK (2011-01-11). probably need to improve this at some point.
+					if(data.statusText == 'success' || data.statusText == 'OK')	{
+//						app.u.dump(" -> adding extension to controller");
+						errors = app.model.loadAndVerifyExtension(extObjItem);
+						}
+					},
+				error: function(a,b,c) {
+					var msg = app.u.errMsgObject("Oops! It appears something went wrong with our app. If error persists, please contact the site administrator.<br \/>(error: ext "+extObjItem.namespace+" had error type "+b+")",123);
+					msg.persistent = true;
+					app.u.throwMessage(msg);
+					app.u.dump(" -> EXTCONTROL ("+namespace+")Got to error. error type = "+b+" c = ");
+					app.u.dump(c);
+					}
+				});
+			}
+		}
+	}
+
+var luke = new newApp({'domain':'sporks.zoovy.com','vars':{'thisSessionIsAdmin':true}});
+var han = new newApp({'domain':'sporktacular.com','vars':{'thisSessionIsAdmin':false}});
+han.a = '50';
+console.log("han.b = "+han.b());
+console.log("like.b = "+luke.b());
+
+</script>
+
+</head>
+
+<body>
+
+
+
+
+
+
+</body>
+</html>

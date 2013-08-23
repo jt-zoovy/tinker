@@ -55,10 +55,20 @@
 			}, //_drop
 
 		_upload : function(file){
+			//fileReader docs: https://developer.mozilla.org/en-US/docs/Using_files_from_web_applications
 			var reader = new FileReader();
-			var bin = reader.result;
-			var fpath = this.options.fpath || file.name.charAt(0);
+			var folder = this.options.fpath || file.name.charAt(0);
+//			var bin = reader.result;
 			app.u.dump(" -> adding file: "+file.name+" to fpath "+folder);
+			app.model.addDispatchToQ({
+				'_cmd':'adminImageUpload',
+				'_tag':	{
+					base64 : btoa(reader.readAsBinaryString), //btoa is binary to base64
+					folder : folder,
+					filename : file.name
+					}
+				},'mutable');
+			app.model.dispatchThis('mutable');
 			}, //upload
 
 		_destroy : function(){
