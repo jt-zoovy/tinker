@@ -24,7 +24,7 @@ function newApp(params)	{
 	else	{
 //		this.initialize(params);
 		self = this;
-		jQuery.extend(true,self,controller(self)); //extend self, not newApp.prototype, so that any variables/functions inside this instance are unique to the instance.
+		$.extend(true,self,controller(self)); //extend self, not newApp.prototype, so that any variables/functions inside this instance are unique to the instance.
 		self.initialize();
 		}
 	return self;
@@ -32,9 +32,15 @@ function newApp(params)	{
 
 
 function controller(self)	{
+	console.log('controller instantiated');
 	return {
 		initialize : function()	{
+//			console.log('got here');
 			//set some vars. work some magic. do something.
+			self.model = new model(self);
+			},
+		u : {
+			dump : function(s)	{console.log(s)}
 			},
 		b : function(){return self.a},
 		a : '42'
@@ -42,10 +48,14 @@ function controller(self)	{
 	}
 
 function model(self)	{
+	var M = this;
 	return {
 		version : "201318",
+		s : function()	{
+			self.u.dump('test');
+			},
 		fetchExtension : function(extObjItem)	{
-//			app.u.dump('BEGIN model.fetchExtention ['+extObjItem.namespace+']');
+			self.u.dump('BEGIN model.fetchExtention ['+extObjItem.namespace+']');
 			var errors = '';
 			var url = extObjItem.filename+"?_v="+app.vars.release;
 			var namespace = extObjItem.namespace; //for easy reference.
@@ -81,11 +91,13 @@ function model(self)	{
 	}
 
 var luke = new newApp({'domain':'sporks.zoovy.com','vars':{'thisSessionIsAdmin':true}});
+luke.model.s();
+/*
 var han = new newApp({'domain':'sporktacular.com','vars':{'thisSessionIsAdmin':false}});
 han.a = '50';
 console.log("han.b = "+han.b());
 console.log("like.b = "+luke.b());
-
+*/
 </script>
 
 </head>
