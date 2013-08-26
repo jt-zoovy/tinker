@@ -9,6 +9,19 @@
 
 <script>
 
+/*
+controller.js is included in the index.html file.
+ -> includes the loadscript function.
+ -> includes all utility functions.
+ -> most render formats are gone (leave process list, popVal and the other very universal ones)
+ -> all calls are gone.
+ 
+Controller loads the model automatically (maybe a param to disable?)
+
+Will we still need zGlobals? I think not.
+*/
+
+
 var zGlobals = {};
 
 function newApp(params)	{
@@ -26,10 +39,19 @@ function newApp(params)	{
 		self = this;
 		$.extend(true,self,controller(self)); //extend self, not newApp.prototype, so that any variables/functions inside this instance are unique to the instance.
 		self.initialize();
+		newApp.prototype.model = create(new model(self));
+//		$.extend(true,newApp.prototype,{model : model()});
+//		self.model = model(self); //the way this is done, changes to model would be shared across instances of newApp. probably not a bad thing.
 		}
 	return self;
 	}
 
+
+function create(parent) {
+	var F = function() {};
+	F.prototype = parent;
+	return new F();
+	}
 
 function controller(self)	{
 	console.log('controller instantiated');
@@ -37,7 +59,8 @@ function controller(self)	{
 		initialize : function()	{
 //			console.log('got here');
 			//set some vars. work some magic. do something.
-			self.model = new model(self);
+//			self.prototype.model = model();
+//			self.model = 
 			},
 		u : {
 			dump : function(s)	{console.log(s)}
@@ -48,7 +71,7 @@ function controller(self)	{
 	}
 
 function model(self)	{
-	var M = this;
+	console.log(this);
 	return {
 		version : "201318",
 		s : function()	{
@@ -91,13 +114,22 @@ function model(self)	{
 	}
 
 var luke = new newApp({'domain':'sporks.zoovy.com','vars':{'thisSessionIsAdmin':true}});
-luke.model.s();
-/*
 var han = new newApp({'domain':'sporktacular.com','vars':{'thisSessionIsAdmin':false}});
+han.model = 'frank';
+luke.model.s();
+
+
+
+/*
+
 han.a = '50';
 console.log("han.b = "+han.b());
 console.log("like.b = "+luke.b());
 */
+
+
+
+	
 </script>
 
 </head>
