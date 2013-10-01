@@ -5,20 +5,54 @@
 <title>Untitled Document</title>
 <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
 <script>
-function runIt(scriptID){
-	console.log('got into runIt');
-    var $iframe = $("<iframe \/>");
-    $('body').append($iframe);
-    var script = $("<script type='text/javascript'>console.log('jt was here');<\/script>");
-	script.append("window.parent.scriptCallback('"+scriptID+"',true);");
-    $iframe.contents().find('head').append(script);
+var scriptObject = {};
+
+var ROI = new Array()
+ROI.push({'owner':'bob','script':"<script type='text/javascript' id='script1'>console.log('jt was here');<\/script>"});
+ROI.push({'owner':'bobfail','script':"<script type='text/javascript' id='script1'>console.lo('jt was here');<\/script>"});
+ROI.push({'owner':'bob3','script':"<script type='text/javascript' id='script1'>console.log('jt was here');<\/script><script src='http://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js'><\/script>"});
+
+
+function runIt(arr){
+	console.log('running runIt');
+	var L = arr.length;
+	console.log(" -> L: "+L);
+	for(var i = 0; i < L; i++)	{
+		scriptObject[arr.owner] = {'init': new Date().getTime()}; //ts allows us to determine if something catastropic went wrong after X seconds w/ no update. reminder - JS uses milliseconds on epoch time.
+		//adding to iframe gives us an isolation layer
+		//data-script-id added so the iframe can be removed easily later.
+		var $iframe = $("<iframe \/>").appendTo('body'); //.attr({'data-script-id':arr.owner,'height':100,'width':100}).css({'display':'none'}) -> commented out for testing !!!
+		var $div = $("<div \/>").append(arr[i].script); //may contain multiple scripts.
+		var scripts = ""; //all the non 'src' based script contents, in one giant lump. it's put into a 'try' to track code errors.
+		$div.find('script').each(function(){
+			console.log("woot");
+			var $s = $(this);
+			if($s.attr('src'))	{
+				console.log(" -> attempting to add "+$s.attr('src'));
+				$iframe.contents().find('head').append($s);
+				}
+			else	{
+				scripts += $s.text()+"\n\n";
+				}
+			});
+		$iframe.contents().find('head').append("<script>try{"+scripts+"\n window.parent.scriptCallback('"+arr.owner+"','success');} catch(err){window.parent.scriptCallback('"+arr.owner+"','error: '+err);}<\/script>");
+		}
     }
 
-function scriptCallback(scriptID,bool){
-	alert(scriptID+" = "+bool)
+function scriptCallback(id,r){
+	scriptObject[id].result = r;
+	scriptObject[id].completed = new Date().getTime();
 	}
 
-
+function areWeThereYet()	{
+	var L = ROI.length;
+	var r = true;
+	for(var i = 0; i < L; i += 1)	{
+		if(scriptObject[ROI[i].id].completed)	{}
+		else	{r = false;}
+		}
+	return r;
+	}
 </script>
 
 
@@ -27,7 +61,8 @@ function scriptCallback(scriptID,bool){
 <body>
 
 
-<button onClick="runIt('GTS');">Run It</button>
+<button onClick="runIt(ROI);">Run It</button>
+<button onClick="console.log(areWeThereYet());">AreWeThereYet</button>
 
 
 </body>
