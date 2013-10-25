@@ -55,11 +55,7 @@ body	{font-size:90%;}
 							$('option:selected',$i).trigger(supportedEvents[i]+'.app');
 							}
 						else if($i.is(':checkbox'))	{
-//							var state = $i.is(':checked');
 							$i.trigger(supportedEvents[i]+'.app');
-//							if(state)	{
-//								$i.prop('checked','checked'); //preserves state when trigger changes it.
-//								}
 							}
 						else if($i.is(':radio'))	{
 							if($i.is(':checked'))	{
@@ -252,8 +248,13 @@ body	{font-size:90%;}
 				else if($input.is(':checkbox') || $input.is(':radio'))	{
 					//handled in it's own delegation above. Here because they 'could' be triggered by a space bar.
 					}
-				else	{
+//only add the edited class if the value has changed.
+				else if($input.prop("defaultValue") != $input.val())	{
 					$input.addClass('edited');
+					self.updateChangeCounts($context);
+					}
+				else	{
+					//well... something happened.  verify change counts are correct. 
 					self.updateChangeCounts($context);
 					}
 				});
