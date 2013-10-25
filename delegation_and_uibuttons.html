@@ -17,10 +17,17 @@
 $(function() {
 	$('button').button();
 	
-	$('body').on('click',"[data-app-click]",function(e){
+/*	$('body').on('click',"[data-app-click]",function(e){
 		console.log('e.target');
 		console.dir(e.target);
 		});
+*/
+	var supportedEvents = new Array("click","change","focus","blur","submit");
+	for(var i = 0; i < supportedEvents.length; i += 1)	{
+		$(document.body).on(supportedEvents[i],"[data-app-"+supportedEvents[i]+"]",function(e,p){
+			console.dir(e);
+			});						
+		}
 	});
 
 </script>

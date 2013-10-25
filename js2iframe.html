@@ -5,43 +5,47 @@
 <title>Untitled Document</title>
 <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
 <script>
-var scriptObject = {};
 
 var ROI = new Array()
-ROI.push({'owner':'bob','script':"<script type='text/javascript' id='script1'>console.log('jt was here');<\/script>"});
+ROI.push({'owner':'bob','script':"<script type='text/javascript' id='script1'>console.log('\njt was here');<\/script>"});
 ROI.push({'owner':'bobfail','script':"<script type='text/javascript' id='script1'>console.lo('jt was here');<\/script>"});
 ROI.push({'owner':'bob3','script':"<script type='text/javascript' id='script1'>console.log('jt was here');<\/script><script src='http://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js'><\/script>"});
 
 
 function scripts2iframe(arr){
-	console.log('running runIt');
 	var L = arr.length;
-	console.log(" -> L: "+L);
 	for(var i = 0; i < L; i++)	{
-		scriptObject[arr.owner] = {'init': new Date().getTime()}; //ts allows us to determine if something catastropic went wrong after X seconds w/ no update. reminder - JS uses milliseconds on epoch time.
-		//adding to iframe gives us an isolation layer
-		//data-script-id added so the iframe can be removed easily later.
-		var $iframe = $("<iframe \/>").appendTo('body'); //.attr({'data-script-id':arr.owner,'height':100,'width':100}).css({'display':'none'}) -> commented out for testing !!!
-		var $div = $("<div \/>").append(arr[i].script); //may contain multiple scripts.
-		var scripts = ""; //all the non 'src' based script contents, in one giant lump. it's put into a 'try' to track code errors.
-		$div.find('script').each(function(){
-			console.log("woot");
-			var $s = $(this);
-			if($s.attr('src'))	{
-				console.log(" -> attempting to add "+$s.attr('src'));
-				$iframe.contents().find('head').append($s);
-				}
-			else	{
-				scripts += $s.text()+"\n\n";
-				}
-			});
-		$iframe.contents().find('head').append("<script>try{"+scripts+"\n window.parent.scriptCallback('"+arr.owner+"','success');} catch(err){window.parent.scriptCallback('"+arr.owner+"','error: '+err);}<\/script>");
+//adding to iframe gives us an isolation layer
+//data-script-id added so the iframe can be removed easily later.
+		arr[i].id = 'iframe_3ps_'+i
+		$("<iframe \/>",{'id':arr[i].id}).appendTo('body'); //.attr({'data-script-id':arr[i].owner,'height':100,'width':100}).css({'display':'none'}) -> commented out for testing !!!
+/*
+the timeout is added for multiple reasons.
+1.  jquery needed a moment between adding the iframe to the DOM and accessing it's contents.
+2.  by adding some time between each interation (100 * 1), if there's a catastrophic error, the next code will still run.
+*/
+  		setTimeout(function(thisArr){
+			var $iframe = $('#'+thisArr.id).contents().find("html").html("bob was here");
+			var $div = $("<div \/>").append(thisArr.script); //may contain multiple scripts.
+			var scripts = ""; //all the non 'src' based script contents, in one giant lump. it's put into a 'try' to track code errors.
+			$div.find('script').each(function(){
+				console.log("woot");
+				var $s = $(this);
+				if($s.attr('src'))	{
+					console.log(" -> attempting to add "+$s.attr('src'));
+					$iframe.contents().find('head').append($s);
+					}
+				else	{
+					scripts += $s.text()+"\n\n";
+					}
+				});
+			$iframe.append("<script>try{"+scripts+"\n window.parent.scriptCallback('"+arr.owner+"','success');} catch(err){window.parent.scriptCallback('"+arr.owner+"','error: '+err);}<\/script>");
+			},(100 * i),arr[i])
 		}
     }
 
 function scriptCallback(id,r){
-	scriptObject[id].result = r;
-	scriptObject[id].completed = new Date().getTime();
+	//so something.
 	}
 
 function areWeThereYet()	{
