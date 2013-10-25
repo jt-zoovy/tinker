@@ -23,6 +23,7 @@ body	{font-size:90%;}
 	$.widget("ui.anydelegate",{
 		options : {
 			trackEdits : false, //boolean.  if true, as an input/select is changed, an 'edited' class is added to the input.
+			trackFormEvents : true, //set to false to turn off the form event actions (panel code et all)
 /* the following options are only pertinent if trackEdits is enabled */
 			trackSelector : null, //allows for delegation to occur on an element encompasing several forms, but for tracking to be applied to each individual form.
 			masterSaveSelector : "[data-app-role='masterSaveButton']" //if applying track edits to a subset, this can be used to update a master button (X total changes within all forms).
@@ -41,14 +42,14 @@ body	{font-size:90%;}
 			else	{
 				var supportedEvents = new Array("click","change","focus","blur","submit","keyup");
 				for(var i = 0; i < supportedEvents.length; i += 1)	{
-					$t.on(supportedEvents[i]+".app","[data-app-"+supportedEvents[i]+"]",function(e,p){
+					$t.on(supportedEvents[i]+".app","[data-app-"+supportedEvents[i]+"], [data-input-"+supportedEvents[i]+"]",function(e,p){
 						self._executeEvent($(e.currentTarget),$.extend(p,e));
 						return true;
 						});
 					
 //go through and trigger the form based events, so that if any content/classes should be on, they are.
 //do this before edit tracking is added so the edited class is not added.
-					$("[data-app-"+supportedEvents[i]+"='form']",$t).each(function(){
+					$("[data-input-"+supportedEvents[i]+"]",$t).each(function(){
 						var $i = $(this)
 						if($i.is('select'))	{
 							$('option:selected',$i).trigger(supportedEvents[i]+'.app');
@@ -91,16 +92,14 @@ body	{font-size:90%;}
 			ep = ep || {};
 			ep.normalizedType = this._normalizeEventType(ep.type);
 			if($CT && $CT instanceof jQuery)	{
-				if($CT.attr('data-app-'+ep.normalizedType) == 'form')	{
+				if($CT.attr('data-input-'+ep.normalizedType))	{
 					this._handleFormEvents($CT,ep);
 					}
-				else if($CT.attr('data-app-'+ep.normalizedType))	{
+				
+				if($CT.attr('data-app-'+ep.normalizedType))	{
 					this._handleAppEvents($CT,ep);
 					}
-				else	{
-					//The type of event triggered and the type of event on the element don't match. do nothing.
-					console.log("Element for "+ep.normalizedType+" has no matching event type declared");
-					}
+				
 				}
 			else	{
 				$('#globalMessaging').anymessage({'message':"In app.u.executeEvent, $target is empty or not a valid jquery instance [isValid: "+($target instanceof jQuery)+"] or p.type ["+ep.normalizedType+"] is not set.",'gMessage':true})
@@ -377,20 +376,20 @@ function bob() {
 
 	<button data-app-role='saveButton'>Save <span class='numChanges'></span> Changes</button><br />
 	
-	<input type='checkbox' name='ima_something' data-app-change='form' data-check-selectors='is_boss,is_not_boss' data-checked-classes='is_boss' data-unchecked-classes="is_not_boss" />I am a boss
+	<input type='checkbox' name='ima_something' data-input-change='form' data-check-selectors='is_boss,is_not_boss' data-checked-classes='is_boss' data-unchecked-classes="is_not_boss" />I am a boss
 		<div class='showBossyStuff'>This is stuff for only bosses to see</div>
 	
 	<br /><br />
 	<div>
-		<label><input type='radio' name='frank'  value='1' data-show-panel='radioTest1' data-panel-selector=".radioTest" data-app-click="form" />choice 1</label><br />
+		<label><input type='radio' name='frank'  value='1' data-show-panel='radioTest1' data-panel-selector=".radioTest" data-input-click="form" />choice 1</label><br />
 			<div data-panel-id='radioTest1' class='displayNone radioTest'>1</div>
-		<label><input type='radio' name='frank'  value='2' data-show-panel='radioTest2' data-panel-selector=".radioTest" data-app-click="form" checked='checked' />choice 2</label><br />
+		<label><input type='radio' name='frank'  value='2' data-show-panel='radioTest2' data-panel-selector=".radioTest" data-input-click="form" checked='checked' />choice 2</label><br />
 			<div data-panel-id='radioTest2' class='displayNone radioTest'>2</div>
-		<label><input type='radio' name='frank'  value='3' data-panel-selector=".radioTest" data-app-click="form" />choice 3 (no panel)</label><br />
+		<label><input type='radio' name='frank'  value='3' data-panel-selector=".radioTest" data-input-click="form" />choice 3 (no panel)</label><br />
 	
 	</div><br /><br />
 	
-	<label ><input type='checkbox' name='selling_services' data-panel-selector='.trainerSellServices' data-show-panel='trainerSellServices' data-app-change="form">We sell services</label>
+	<label ><input type='checkbox' name='selling_services' data-panel-selector='.trainerSellServices' data-show-panel='trainerSellServices' data-input-change="form">We sell services</label>
 	<div class='trainerSellServices displayNone ' data-panel-id='trainerSellServices'>
 		<label><input type='checkbox' value='selling_services_location'>Services are performed at our location</label><br />
 		<label><input type='checkbox' value='selling_services_offsite'>Services are performed off site</label>
@@ -414,7 +413,7 @@ form 2<br />
 
 Read Only, set by next select list<input type='text' readonly="readonly" name='harry' value='' /><br />
 <!-- add this to your select list. make the class very specific. anything with this class will get toggled off onChange -->
-<select data-panel-selector=".domainEmailConfiguration" data-set-value-selector="[name='harry']" data-app-change="form">
+<select data-panel-selector=".domainEmailConfiguration" data-set-value-selector="[name='harry']" data-input-change="form">
 	<option>none</option>
 	<option data-show-panel='domainEmailConfigurationMX' value='1' data-set-value="Tom">domainEmailConfigurationMX 1</option>
 	<option data-show-panel='domainEmailConfigurationMX2' value='2' data-set-value="Dick" selected="selected">domainEmailConfigurationMX 2</option>
