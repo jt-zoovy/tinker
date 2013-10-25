@@ -23,10 +23,10 @@ body	{font-size:90%;}
 	$.widget("ui.anydelegate",{
 		options : {
 //The following three options will NOT be enabled if a parent element is already running them. otherwise, events would get double-executed.
-			trackEdits : false, //a string for output. if set, will ignore any _msgs or _err orr @issues in the 'options' object (passed by a request response)
-			trackSelector : '', //allows for delegation to occur on an element encompasing several forms, but for tracking to be applied to each individual form. only used if trackEdits is enabled.
-			masterSaveSelector : "[data-app-role='masterSaveButton']", //for use w/ track selector. if applying track edits to a subset, this can be used to update a master button (X total changes within all forms).
-			updateClassCount : false //allows for more than just the save button to be updated with the number of changes.
+			trackEdits : false, //boolean.  if true, as an input/select is changed, an 'edited' class is added to the input.
+/* the following options are only pertinent if trackEdits is enabled */
+			trackSelector : null, //allows for delegation to occur on an element encompasing several forms, but for tracking to be applied to each individual form.
+			masterSaveSelector : "[data-app-role='masterSaveButton']" //if applying track edits to a subset, this can be used to update a master button (X total changes within all forms).
 			},
 
 		_init : function(){
@@ -81,6 +81,7 @@ body	{font-size:90%;}
 				else	{
 					self._applyTracking4Edits($t);
 					}
+				this.updateChangeCounts(); //handles defaults, like hiding the changes-container elements
 				}
 			}, //_init
 
@@ -134,6 +135,7 @@ body	{font-size:90%;}
 					$($ele.attr('data-show-selector'),$context).slideDown();
 					}
 				},
+
 //will hide the matching selectors. (hide-selector='.bob' will hide all class='bob' elements.
 			"hide-selector" : function($CT,$context)	{
 				if($($ele.attr('data-hide-selector'),$context).is(':hidden'))	{}
@@ -141,16 +143,19 @@ body	{font-size:90%;}
 					$($ele.attr('data-hide-selector'),$context).slideUp();
 					}
 				},
+
 			"checked-classes" : function($CT,$context)	{
 				$context.removeClass($CT.data('check-selectors'));
 				$CT.is(':checked') ? $context.addClass($CT.data('checked-classes')) : $context.removeClass($CT.data('checked-classes'));
 				},
+
 			"unchecked-classes" : function($CT,$context)	{
 				$context.removeClass($CT.data('check-selectors'));
 				!$CT.is(':checked') ? $context.addClass($CT.data('unchecked-classes')) : $context.removeClass($CT.data('unchecked-classes'));
 				},
 
 //allows for a specific panel (or sets of panels) to be turned on/off based on selection. commonly used on a select list, but not limited to that.
+//probably redundant now w/ the hide/show selector, but used a lot in the UI already, so here it is.
 			"panel-selector" : function($CT,$context)	{
 				$($CT.data('panel-selector'),$context).hide(); //hide all panels w/ matching selector.
 				
@@ -169,14 +174,22 @@ body	{font-size:90%;}
 					}
 				}
 			},
-		
+
+//a method that can be triggered by $('selector').anydelegate('updateChangeCounts')
 		updateChangeCounts : function()	{
 			var self = this;
 			if(self.options.trackSelector)	{
 				$(self.options.trackSelector,self.element).each(function(){
 					var $ele = $(this);
-					if($ele.data('numchanges-container'))	{
-						$("[data-app-role='"+$ele.data('numchanges-container')+"']",self.element).find('.numChanges').text($('.edited',$ele).length)
+//if a changes container has been specified, update with the number of edits or hide if there are no edits.
+					if($ele.data('changes-container'))	{
+						if($('.edited',$ele).length)	{
+							$("[data-anydelegate-changes='"+$ele.data('changes-container')+"']",self.element).show().find('.numChanges').text($('.edited',$ele).length)
+							}
+						else	{
+							$("[data-anydelegate-changes='"+$ele.data('changes-container')+"']",self.element).hide();
+							}
+						
 						}
 					self._updateSaveButtonInContext($ele,"[data-app-role='saveButton']");
 					})
@@ -188,7 +201,8 @@ body	{font-size:90%;}
 				self._updateSaveButtonInContext(this.element,"[data-app-role='masterSaveButton']")
 				}
 			},
-		
+
+//used to update the save buttons, both the master and the individuals.
 		_updateSaveButtonInContext : function($context,selector)	{
 			var $button = $(selector,$context);
 
@@ -307,7 +321,7 @@ In both cases, keep watching for further changes.
 
 //clear the message entirely. run after a close. removes element from DOM.
 		destroy : function(){
-			//remove all the delegated events !!!
+			//remove all the delegated events!!! leave the content alone.
 			}
 		}); // create the widget
 })(jQuery); 
@@ -350,13 +364,16 @@ function bob() {
 
 <div id='someContainer'>
 
-	<button data-app-role='masterSaveButton'>Save <span class='numChanges'></span> Changes</button><br />
+	<button data-app-role='masterSaveButton'>Master <span class='numChanges'></span> Save</button><br />
 
-<div data-app-role='form1changes'>Changes to form 1 <span class='numChanges'></span></div>
-<div data-app-role='form2changes'>Changes to form 2 <span class='numChanges'></span></div>
+<hr />
+<h4>Change Updates</h4>
+<div data-anydelegate-changes='form1changes'>Changes to form 1 <span class='numChanges'></span></div>
+<div data-anydelegate-changes='form2changes'>Changes to form 2 <span class='numChanges'></span></div>
 
+<hr />
 
-<form onSubmit='return false;' id='form1' data-numchanges-container='form1changes'>
+<form onSubmit='return false;' id='form1' data-changes-container='form1changes'>
 
 
 	<button data-app-role='saveButton'>Save <span class='numChanges'></span> Changes</button><br />
@@ -383,9 +400,9 @@ function bob() {
 </form>
 
 
-<br /><br />
+<hr />
 
-<form onSubmit='return false;' id='form2' data-numchanges-container='form2changes'>
+<form onSubmit='return false;' id='form2' data-changes-container='form2changes'>
 form 2<br />
 
 
