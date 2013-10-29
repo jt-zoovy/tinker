@@ -22,25 +22,25 @@ body	{font-size:90%;}
 (function($) {
 	$.widget("ui.anydelegate",{
 		options : {
+//			trackFormEvents : true, //set to false to turn off the form event actions (panel code et all)
 			trackEdits : false, //boolean.  if true, as an input/select is changed, an 'edited' class is added to the input.
-			trackFormEvents : true, //set to false to turn off the form event actions (panel code et all)
-/* the following options are only pertinent if trackEdits is enabled */
+/* the following options are only applicable if trackEdits is enabled */
 			trackSelector : null, //allows for delegation to occur on an element encompasing several forms, but for tracking to be applied to each individual form.
 			masterSaveSelector : "[data-app-role='masterSaveButton']" //if applying track edits to a subset, this can be used to update a master button (X total changes within all forms).
 			},
 
 		_init : function(){
-//			console.log("BEGIN anydelegate");
+//			app.u.dump("BEGIN anydelegate");
 			var
 				self = this,
 				$t = self.element; //this is the targeted element (ex: $('#bob').anymessage() then $t is bob)
 
 //don't want to double-delegate. make sure no parent already has delegation run. a class is used as it's more efficient and can be trusted because it's added programatically.
 			if($t.hasClass('eventDelegation') || $t.closest('.eventDelegation').length >= 1)	{
-				console.log("handleEventDelegation was run on an element (or one of it's parents) that already has events delegated. DELEGATION SKIPPED.");
+				app.u.dump("handleEventDelegation was run on an element (or one of it's parents) that already has events delegated. DELEGATION SKIPPED.");
 				}
 			else	{
-				var supportedEvents = new Array("click","change","focus","blur","submit","keyup");
+				var supportedEvents = new Array("click","change","focus","blur","submit","keyup"); //if you add a new event, don't forget to remove it in _destroy.
 				for(var i = 0; i < supportedEvents.length; i += 1)	{
 					$t.on(supportedEvents[i]+".app","[data-app-"+supportedEvents[i]+"], [data-input-"+supportedEvents[i]+"]",function(e,p){
 						self._executeEvent($(e.currentTarget),$.extend(p,e));
@@ -69,7 +69,7 @@ body	{font-size:90%;}
 				}
 			if(self.options.trackEdits)	{
 				if(self.options.trackSelector)	{
-					console.log(" -> TrackSelector IS enabled");
+//					app.u.dump(" -> TrackSelector IS enabled");
 					$(self.options.trackSelector,$t).each(function(){
 						self._applyTracking4Edits($(this));
 						})
@@ -104,7 +104,7 @@ body	{font-size:90%;}
 
 		_formEventActions : {
 //used w/ keyup to modify the value of the input. ex: all uppercase. input-format accepts a comma separated list of values.
-			"input-format" : function($CT,$context)	{
+			"input-format" : function($CT)	{
 				if($CT.data('input-format').indexOf('uppercase') > -1)	{
 					$CT.val($CT.val().toUpperCase());
 					}
@@ -118,40 +118,40 @@ body	{font-size:90%;}
 					}
 				},
 //allows one form input to set the value of another.
-			"set-value-selector" : function($CT,$context)	{
-				$($CT.data('set-value-selector'),$context).val($CT.is('select') ? $("option:selected",$CT).data('set-value') : $CT.data('set-value')).trigger('keyup.trackform').trigger('change.trackform');
+			"set-value-selector" : function($CT)	{
+				$($CT.data('set-value-selector'),$CT.closest('form')).val($CT.is('select') ? $("option:selected",$CT).data('set-value') : $CT.data('set-value')).trigger('keyup.trackform').trigger('change.trackform');
 				},
 
 //will hide the matching selectors. (hide-selector='.bob' will hide all class='bob' elements.
-			"hide-selector" : function($CT,$context)	{
-				if($($ele.attr('data-hide-selector'),$context).is(':hidden'))	{}
+			"hide-selector" : function($CT)	{
+				if($($ele.attr('data-hide-selector'),$CT.closest('form')).is(':hidden'))	{}
 				else	{
-					$($ele.attr('data-hide-selector'),$context).slideUp();
+					$($ele.attr('data-hide-selector'),$CT.closest('form')).slideUp();
 					}
 				},
 
 //will show the matching selectors. (show-selector='.bob' will show all class='bob' elements.
-			"show-selector" : function($CT,$context)	{
-				if($($ele.attr('data-show-selector'),$context).is(':visible'))	{}
+			"show-selector" : function($CT)	{
+				if($($ele.attr('data-show-selector'),$CT.closest('form')).is(':visible'))	{}
 				else	{
-					$($ele.attr('data-show-selector'),$context).slideDown();
+					$($ele.attr('data-show-selector'),$CT.closest('form')).slideDown();
 					}
 				},
 
-			"checked-classes" : function($CT,$context)	{
-				$context.removeClass($CT.data('check-selectors'));
-				$CT.is(':checked') ? $context.addClass($CT.data('checked-classes')) : $context.removeClass($CT.data('checked-classes'));
+			"checked-classes" : function($CT)	{
+				$CT.closest('form').removeClass($CT.data('check-selectors'));
+				$CT.is(':checked') ? $CT.closest('form').addClass($CT.data('checked-classes')) : $CT.closest('form').removeClass($CT.data('checked-classes'));
 				},
 
-			"unchecked-classes" : function($CT,$context)	{
-				$context.removeClass($CT.data('check-selectors'));
-				!$CT.is(':checked') ? $context.addClass($CT.data('unchecked-classes')) : $context.removeClass($CT.data('unchecked-classes'));
+			"unchecked-classes" : function($CT)	{
+				$CT.closest('form').removeClass($CT.data('check-selectors'));
+				!$CT.is(':checked') ? $CT.closest('form').addClass($CT.data('unchecked-classes')) : $CT.closest('form').removeClass($CT.data('unchecked-classes'));
 				},
 
 //allows for a specific panel (or sets of panels) to be turned on/off based on selection. commonly used on a select list, but not limited to that.
 //provides more control that trying to accomplish the same thing with the show/hide-selectors.
-			"panel-selector" : function($CT,$context)	{
-				$($CT.data('panel-selector'),$context).hide(); //hide all panels w/ matching selector.
+			"panel-selector" : function($CT)	{
+				$($CT.data('panel-selector'),$CT.closest('form')).hide(); //hide all panels w/ matching selector.
 				
 				if($CT.is(':checkbox') && !$CT.is(':checked'))	{} //this is an unchecked checkbox. do nothing.
 				else	{
@@ -161,7 +161,7 @@ body	{font-size:90%;}
 						else {panels.push(panelList)};
 						
 						for(var i = 0; i < panels.length; i += 1)	{
-							$("[data-panel-id='"+panels[i]+"']",$context).show(); //panel defined and it exists. show it.
+							$("[data-panel-id='"+panels[i]+"']",$CT.closest('form')).show(); //panel defined and it exists. show it.
 							}
 						}
 					else	{} //no panel was defined. this is an acceptable case.
@@ -195,6 +195,12 @@ body	{font-size:90%;}
 				self._updateSaveButtonInContext(this.element,"[data-app-role='masterSaveButton']")
 				}
 			},
+
+/*
+pass in an event name and a function and it will be added as an eventAction.
+		addFormEventAction : function(name,eventActionFunction){},
+
+*/
 
 //used to update the save buttons, both the master and the individuals.
 		_updateSaveButtonInContext : function($context,selector)	{
@@ -262,7 +268,7 @@ body	{font-size:90%;}
 			},
 		
 		_handleFormEvents : function($CT,ep)	{
-//			console.log("BEGIN _handleFormEvents");
+//			app.u.dump("BEGIN _handleFormEvents");
 			//for each event action, determine if the element should trigger it and, if so, trigger it.
 			for(index in this._formEventActions)	{
 				if($CT.data(index))	{this._formEventActions[index]($CT,this.element);}
@@ -273,12 +279,12 @@ body	{font-size:90%;}
 		_handleAppEvents : function($CT,ep)	{
 //by now, $CT has already been verified as a valid jquery object and that is has some data-app-EVENTTYPE on it.
 			ep = ep || {};
-			var	AEF = $target.data('app-'+ep.normalizedType).split('|'); //Action Extension Function.  [0] is extension. [1] is Function.
+			var	AEF = $CT.data('app-'+ep.normalizedType).split('|'); //Action Extension Function.  [0] is extension. [1] is Function.
 
 			if(AEF[0] && AEF[1])	{
 				if(app.ext[AEF[0]] && app.ext[AEF[0]].e[AEF[1]] && typeof app.ext[AEF[0]].e[AEF[1]] === 'function')	{
 					//execute the app event.
-					app.ext[AEF[0]].e[AEF[1]]($target,p);
+					app.ext[AEF[0]].e[AEF[1]]($CT,ep);
 					}
 				else	{
 					$('#globalMessaging').anymessage({'message':"In app.u.executeEvent, extension ["+AEF[0]+"] and function["+AEF[1]+"] both passed, but the function does not exist within that extension.",'gMessage':true})
@@ -300,11 +306,11 @@ alternatively, this could get moved into another parent that already has event d
  -> in this case, remove the events.
 
 In both cases, keep watching for further changes.
-*/
+
 		_watchMutation : function()	{
 			
 			},
-
+*/
 //The actual event type and the name used on the dom (focus, blur, etc) do not always match. Plus, I have a sneaking feeling we'll end up with differences between browsers.
 //This function can be used to regularize the event type. Wherever possible, we'll map to the jquery event type name.
 		_normalizeEventType : function(type)	{
@@ -321,13 +327,20 @@ In both cases, keep watching for further changes.
 //clear the message entirely. run after a close. removes element from DOM.
 		destroy : function(){
 			//remove all the delegated events!!! leave the content alone.
+			this.element.off('change.trackform').off('keyup.trackform')
+			var supportedEvents = new Array("click","change","focus","blur","submit","keyup");
+			for(var i = 0; i < supportedEvents.length; i += 1)	{
+				this.element.off(supportedEvents[i]+".app");
+				}
 			}
 		}); // create the widget
 })(jQuery); 
 
 
 
-
+function addEdited()	{
+	$('form').append("<div class='edited'>1 extra edit<\/div>").first().append("<div class='edited'>2 extra edit<\/div>")
+	}
 
 function bob() {
 	console.log('form.length: '+$('form').length);
@@ -362,6 +375,9 @@ function bob() {
 
 
 <div id='someContainer'>
+
+
+<div data-app-role='productEditorContainer'>
 
 	<button data-app-role='masterSaveButton'>Master <span class='numChanges'></span> Save</button><br />
 
@@ -428,8 +444,47 @@ Read Only, set by next select list<input type='text' readonly="readonly" name='h
 <div data-panel-id='domainEmailConfigurationMX3' class='displayNone domainEmailConfiguration'>3</div>
 
 </form>
+</div>
+
+<hr /><hr />
+
+
+<div data-app-role='productEditorContainer'>
+<form onSubmit='return false;' id='form3' data-changes-container='form3changes'>
+form 3<br />
+
+
+<button data-app-role='saveButton'>Save <span class='numChanges'></span> Changes</button><br />
+<br />
+<label>
+	something
+	<input type='text' name='sometextinput' />
+</label>
+
+Read Only, set by next select list<input type='text' readonly="readonly" name='harry' value='' /><br />
+<!-- add this to your select list. make the class very specific. anything with this class will get toggled off onChange -->
+<select data-panel-selector=".domainEmailConfiguration" data-set-value-selector="[name='harry']" data-input-change="form">
+	<option>none</option>
+	<option data-show-panel='domainEmailConfigurationMX' value='1' data-set-value="Tom">domainEmailConfigurationMX 1</option>
+	<option data-show-panel='domainEmailConfigurationMX2' value='2' data-set-value="Dick" selected="selected">domainEmailConfigurationMX 2</option>
+	<option data-show-panel='domainEmailConfigurationMX3' value='3' data-set-value="Harry">domainEmailConfigurationMX 3</option>
+	<option  value='4'>domainEmailConfigurationMX 4 (no panel)</option>
+</select>
+
+<!-- add one of these for each matching 'option' that reveals content.  Class should match panel-selector. panel-id should match show-panel value in corresponding option -->
+<div data-panel-id='domainEmailConfigurationMX' class='displayNone domainEmailConfiguration'>1</div>
+<div data-panel-id='domainEmailConfigurationMX2' class='displayNone domainEmailConfiguration'>2</div>
+<div data-panel-id='domainEmailConfigurationMX3' class='displayNone domainEmailConfiguration'>3</div>
+
+</form>
 
 </div>
 
+
+</div>
+<hr />
+
+<button onClick='addEdited();'>Add Edited</button>
+<button onClick="$('#someContainer').anydelegate('updateChangeCounts')">updateChangeCounts</button>
 </body>
 </html>
