@@ -11,20 +11,32 @@
 
 
 <style>
-  .fileUpload_image {
+  .fileUpload_default {
     height: 45px;
     border: 1px solid #ccc;
     margin: 0px 5px 0 0;
+	float: left;
   }
-
+.fileUpload_file {
+    height: 45px;
+	width:45px;
+	background:url(images/file-45x45.png) no-repeat;
+	display:block;
+  }
+  
 .ui-widget-anyupload-buttonset	{
 	position:absolute;
 	top:0;
 	right:0;
 	}
-
-
-
+.ui-widget-anyupload-buttonset button.ui-button	{
+	font-size:.65em;
+	height:1.6em;	
+	}
+.ui-widget-anyupload-buttonset button.ui-button .ui-button-text	{
+	padding: 0 .7em 0 2.2em;
+	line-height:1.4em;
+	}
 
 </style>
 
@@ -36,6 +48,7 @@ how does this interact w/ dropzone? same plugin? different?
 for preview output, support a templateID being passed in then pass it through anycontent.
 once requests begin, disable all cancel button.
 once file is complete, set a timeout to slideUp the file preview.
+add support for a function that would allow the upload to go into a dialog (or some other format) to pin itself to the ui showing that it's occuring and when it's done.
 add a counter for 4/9 files completed.
 at dispatch start, add a counter to the container element for how many items there are. use this to compare against after each dispatch to see if it was the last.
 */
@@ -61,14 +74,14 @@ https://developer.mozilla.org/en-US/docs/Using_files_from_web_applications
 			fileSelected : null, //pass in a function w/ dispatch. (onload for reader). Should contain both 'preview' and 'dispatch'.
 			fileUploadComplete : null, //run after each file.
 			uploadsComplete : null, //run after ALL files are done.
-			autoUpload : true, //will upload the file as soon as it's dragged/selected.
+			instantUpload : true, //will upload the file as soon as it's dragged/selected.
 			maxFiles : null, //if a # is set, only that # of files will be allowed.
 			maxConcurrentUploads : 4, //if X, only X requests will run simultaneously and when one finishes, the next one fires.
 //			imageAttributes : null, //an object: {h:100,w:100,b:'ffffff'}.
 			folder : null, //folder in media library where images are placed.
 			_preview : null, //used to store the preview.
 //events
-			drop : this._defaultDrop, //a function executed when a file is dropped. executed for each file. file,event passed in.
+			ajaxRequest : null, //a function executed when a file is dropped. executed for each file. first param is an object (filename, base64) and second is this.element.
 			upload : null //a function executed after the upload has occured. executed for each file. file,event,responsedata passed in. executed whether response contains errors or not.
 			},
 		_init : function(){
@@ -80,7 +93,6 @@ https://developer.mozilla.org/en-US/docs/Using_files_from_web_applications
 			if($dropzone.data('widget-anyupload'))	{} //already an anydropzone
 			else{
 				$dropzone.data('widget-anyupload',true).addClass('anydropzone').css('position','relative'); // relative positioning needed for file upload icon.
-				
 				this._addButtons();
 
 				$dropzone.on("dragover dragenter", function(event) {
@@ -94,31 +106,32 @@ https://developer.mozilla.org/en-US/docs/Using_files_from_web_applications
 					anyfiledrop._drop(event);
 					});
 				}			
-
 			}, //_init
+
 // adds the buttons for opening the browser file dialog and starting the upload process		
 		_addButtons : function()	{
-			var self = this;
-			var $buttonSet = $("<div \/>").addClass('ui-widget-anyupload-buttonset smallButton');
+			var
+				self = this,
+				$buttonSet = $("<div \/>").addClass('ui-widget-anyupload-buttonset smallButton');
+
 			$buttonSet.append('<input type="file" class="ui-widget-anyfile-fileinput" name="files[]" multiple style="display:none;" />');
-			$("<button \/>").text('Select Files').button({icons: {primary: "ui-icon-document"},text: false}).on('click',function(){
+			$("<button \/>").text('Select Files').button({icons: {primary: "ui-icon-document"},text: true}).on('click',function(){
 				$(this).parent().find(".ui-widget-anyfile-fileinput").trigger('click');
 				}).appendTo($buttonSet);
-			if(!this.options.autoUpload)	{
+			if(!self.options.autoUpload)	{
 				$("<button \/>").text('Start Upload').button({icons: {primary: "ui-icon-arrowthickstop-1-n"},text: false}).button('disable'); //will be enabled once a file is selected
 				}
 			$('.ui-widget-anyfile-fileinput',$buttonSet).on('change',function(event){
 				self.filesChangeEvent(event,self);
 				});
-			this.element.append($buttonSet);
+			self.element.append($buttonSet);
 			},
 
-
-		_defaultDrop : function(files,event){
-			var self = this;
+		_buildPreviews : function(files,event,self){
+			var self = self || this;
 			for (var i = 0; i < files.length; i++) {
 				var file = files[i];
-				var fileType = f.type.match('image.*') ? 'image' : 'file';
+				var fileType = file.type.match('image.*') ? 'image' : 'file';
 // !!! This is where the check should go for file types. if no match, stop and throw a warning.
 //				var imageType = /image.*/;
 //				if (!file.type.match(imageType)) {
@@ -126,73 +139,86 @@ https://developer.mozilla.org/en-US/docs/Using_files_from_web_applications
 
 
 				if(self.options.templateID)	{
-					
+					//create a template instance.  apply data('file') to it.  translate. then append to self.element.
+					//this can't be done till the plugin is in anyplugins or the 'app' calls wont work
 					}
 				else	{
+					//may not support this once deployed, but anycontent is not here for development testing.
 				// Render thumbnail.
-					var $img = $('<img>').addClass('newMediaFile fileUpload_'+fileType);
-					$img.data('file',f);
-					$img.appendTo($target);
+					var $img = (fileType == 'image' ? $('<img>') : $('<span>')).addClass('newMediaFile fileUpload_default fileUpload_'+fileType);
+					$img.data('file',file);
+					$img.appendTo(self.element);
 					}
-				var reader = new FileReader();
-				reader.onload = (function(aImg) { return function(e) { aImg.src = e.target.result; }; })($img.attr());
-				reader.readAsDataURL(file);
-				app.ext.admin.u.handleSaveButtonByEditedClass($target.closest('form')); //updates the save button change count.
+//build the thumbnail.
+				if(fileType == 'image')	{
+					var reader = new FileReader();
+					reader.onload = (function(aImg) { return function(e) { aImg.src = e.target.result; }; })($img[0]);
+					reader.readAsDataURL(file);
+					}
+				if(self.element.closest('eventDelegation').length)	{
+					self.element.closest('eventDelegation').anydelegate('updateChangeCounts'); // updates the save button change count.
+					}
 				}
 			},
 
-		filesChangeEvent : function(evt,self)	{
-			console.log(" --------> fileChangeEvent triggered");
-			var files = evt.target.files; // FileList object
-			self._defaultDrop(evt.target.files,evt);
+		filesChangeEvent : function(event,self)	{
+//			console.log(" --------> fileChangeEvent triggered");
+			var files = event.target.files; // FileList object
+			self._buildPreviews(files,event);
+			if(self.options.instantUpload)	{
+				self._sendFiles();
+				}
 			},
 
 		_setOption : function(option,value)	{
 			$.Widget.prototype._setOption.apply( this, arguments ); //method already exists in widget factory, so call original.
 			}, //_setOption
-
+//loops through the files 
 		_sendFiles : function()	{
-			var imgs = document.querySelectorAll(".newMediaFile");
-			for (var i = 0; i < imgs.length; i++) {
-				this._fileUpload(imgs[i], imgs[i].file);
+			var self = this;
+			if(typeof self.options.ajaxRequest == 'function')	{
+				$(".newMediaFile",self.element).each(function(){
+					self._fileUpload($(this), $(this).data('file'));
+					});
+				}
+			else	{
+				// !!! throw a warning here that no ajaxRequest function was defined.
 				}
 			},
-
-		_fileUpload : function(img, file)	{
+// This is what prepares the file for upload and executes the user-defined ajax request.
+		_fileUpload : function($img, file)	{
 			
 			var newFileName = file.name.replace(/[^A-Za-z0-9]+/ig, "_").toString().toLowerCase(); //alphanumeric only (this will include underscores). the +/ig will replace multiple spaces/specialcharacters in a row w/ 1 underscore.
-			app.u.dump(" revised filename: "+newFileName);
-			var o = this.options;
-			var reader = new FileReader();  
-			var folder = o.folder || newFileName.charAt(0);
-			$(img).attr('data-filename',folder+'/'+newFileName); //used during the save.
+//			app.u.dump(" revised filename: "+newFileName);
+
+			var
+				self = this,
+				o = this.options,
+				reader = new FileReader();
+
+			//create an object.  pass that object into a user-defined 'ajaxRequest' function. {'filename':newFileName,'base64':btoa(evt.target.result)}. second param is this.element (which can be used to get folder or other vars)
 			reader.onload = function(evt) {
-				app.model.addDispatchToQ({
-					'_cmd':'adminImageUpload',
-					'base64' : btoa(evt.target.result), //btoa is binary to base64
-					'folder' : folder,
+				$img.removeClass('newMediaFile').data('queued',true);
+				self.options.ajaxRequest($.extend(true,{
 					'filename' : newFileName,
-					'_tag':	{
-						'callback' : function(rd){
-//							if(typeof o.upload === 'function')	{
-//								o.upload(file,event,rd);
-//								}
-							}
-						}
-					},'passive');
-				app.model.dispatchThis('passive');
+					'base64' : btoa(evt.target.result)
+					},file),{'container' : self.element,'fileElement':$img});
 //				xhr.sendAsBinary(evt.target.result);
 				};
 			reader.readAsBinaryString(file);
+			//!!! here we should dispatch.
 			},
 
 //executed when a file is dropped onto a dropzone.
 		_drop : function(event)	{
-			app.u.dump(" -> a file has been dropped into a dropzone.");
+			var self = this;
+//			app.u.dump(" -> a file has been dropped into a dropzone.");
 			event.preventDefault();
 			var dt = event.originalEvent.dataTransfer; //moz def. wants to look in orginalEvent. docs online looked just in event.dataTransfer.
-			new this.options.drop(dt.files,event,this); // !!! revisit this. should pass in 'events' and 'ui' like other plugins. need to figure that out.
-			this._sendFiles();
+			new self._buildPreviews(dt.files,event,self); // !!! revisit this. should pass in 'events' and 'ui' like other plugins. need to figure that out.
+			if(self.options.instantUpload)	{
+				self._sendFiles();
+				}
 			}, //_drop
 
 
