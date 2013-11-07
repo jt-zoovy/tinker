@@ -68,21 +68,16 @@ https://developer.mozilla.org/en-US/docs/Using_files_from_web_applications
 (function($) {
 	$.widget("ui.anyupload",{
 		options : {
-//			fileclass : null, //can be a more blanket 'type'. vals: image, text, spreadsheet. if set, get's tested BEFORE filetype.
-//			filetypes : null, //pass in an array of file types supported. ex ['csv','xls']
+			fileclass : null, //can be a more blanket 'type'. vals: image, text, spreadsheet. ignored if filetypes is specified (would be redundant)
+			filetypes : [], //pass in an array of file types supported. ex ['csv','xls']
 			templateID : null, // will be used if no fileSelected function is set.
-			fileSelected : null, //pass in a function w/ dispatch. (onload for reader). Should contain both 'preview' and 'dispatch'.
-			fileUploadComplete : null, //run after each file.
-			uploadsComplete : null, //run after ALL files are done.
 			instantUpload : true, //will upload the file as soon as it's dragged/selected.
-			maxFiles : null, //if a # is set, only that # of files will be allowed.
+			maxSelectableFiles : null, //if a # is set, only that # of files will be allowed.
 			maxConcurrentUploads : 4, //if X, only X requests will run simultaneously and when one finishes, the next one fires.
-//			imageAttributes : null, //an object: {h:100,w:100,b:'ffffff'}.
-			folder : null, //folder in media library where images are placed.
-			_preview : null, //used to store the preview.
 //events
-			ajaxRequest : null, //a function executed when a file is dropped. executed for each file. first param is an object (filename, base64) and second is this.element.
-			upload : null //a function executed after the upload has occured. executed for each file. file,event,responsedata passed in. executed whether response contains errors or not.
+			uploadsComplete : null, //run after ALL files are done. For individual files, specify the callback in the ajax request.
+//			fileChange : null, //run anytime a file is added, either via DROP or SELECT
+			ajaxRequest : null //a function executed when a file is dropped. executed for each file. first param is an object (filename, base64) and second is this.element.
 			},
 		_init : function(){
 //			app.u.dump('got to init');
@@ -126,17 +121,41 @@ https://developer.mozilla.org/en-US/docs/Using_files_from_web_applications
 				});
 			self.element.append($buttonSet);
 			},
-
+		
+		_filteredFiles : function(files)	{
+			var newFiles = new Array();
+			var errors = '';
+//filter by filetypes is any are specified.
+			if(this.options.filetypes.length)	{
+				console.log(" -> filetypes filter is ON and running.");
+				for(var i = 0, L = files.length; i < L; i += 1)	{
+//					console.log(i+"). filetype: "+files[i].type);
+					if($.inArray(files[i].type,this.options.filetypes) > -1)	{
+						newFiles.push(files[i]);
+						}
+					else	{
+						errors += "<li>"+files[i].name+" is not a valid type ["+files[i].type+"] for this upload.</li>";
+						}
+					}
+				}
+//filter by fileclass if one is specified.
+//			else if(this.options.fileclass)	{}
+			else	{
+				newFiles = files;
+				}
+			if(errors)	{
+				errors = "An invalid file type was found. Valid types include: "+(this.options.filetypes.join(''))+"<ol>"+errors+"</ol>";
+				this.element.append(errors);
+				}
+			return newFiles;
+			},
+		
 		_buildPreviews : function(files,event,self){
 			var self = self || this;
-			for (var i = 0; i < files.length; i++) {
-				var file = files[i];
+			var filteredFiles = self._filteredFiles(files);
+			for (var i = 0; i < filteredFiles.length; i++) {
+				var file = filteredFiles[i];
 				var fileType = file.type.match('image.*') ? 'image' : 'file';
-// !!! This is where the check should go for file types. if no match, stop and throw a warning.
-//				var imageType = /image.*/;
-//				if (!file.type.match(imageType)) {
-//					continue;
-
 
 				if(self.options.templateID)	{
 					//create a template instance.  apply data('file') to it.  translate. then append to self.element.
@@ -173,7 +192,8 @@ https://developer.mozilla.org/en-US/docs/Using_files_from_web_applications
 		_setOption : function(option,value)	{
 			$.Widget.prototype._setOption.apply( this, arguments ); //method already exists in widget factory, so call original.
 			}, //_setOption
-//loops through the files 
+			
+//start the upload process. Uses the previews that are added to the DOM. Keep all filtering of filetypes code in the preview builder.
 		_sendFiles : function()	{
 			var self = this;
 			if(typeof self.options.ajaxRequest == 'function')	{
@@ -185,7 +205,8 @@ https://developer.mozilla.org/en-US/docs/Using_files_from_web_applications
 				// !!! throw a warning here that no ajaxRequest function was defined.
 				}
 			},
-// This is what prepares the file for upload and executes the user-defined ajax request.
+			
+// This is what prepares an individual file for upload and executes the user-defined ajax request.
 		_fileUpload : function($img, file)	{
 			
 			var newFileName = file.name.replace(/[^A-Za-z0-9]+/ig, "_").toString().toLowerCase(); //alphanumeric only (this will include underscores). the +/ig will replace multiple spaces/specialcharacters in a row w/ 1 underscore.
@@ -229,105 +250,29 @@ https://developer.mozilla.org/en-US/docs/Using_files_from_web_applications
 })(jQuery); 
 
 
-
-
-
-
-
-
-
+/*
 function startUploads()	{
 	$(".newMediaFile").each(function(){
 		fileUpload($(this), $(this).data('file'));
 		});
 	}
-
-function fileUpload(img, file)	{
-
-			var newFileName = file.name.replace(/[^A-Za-z0-9]+/ig, "_").toString().toLowerCase(); //alphanumeric only (this will include underscores). the +/ig will replace multiple spaces/specialcharacters in a row w/ 1 underscore.
-			console.log(" revised filename: "+newFileName);
-//			var o = this.options;
-			var reader = new FileReader(); 
-//			var folder = o.folder || newFileName.charAt(0);
-//			$(img).attr('data-filename',folder+'/'+newFileName); //used during the save.
-			reader.onload = function(evt) {
-				console.log(' GOT TO HERE!!!!!!!!!!');
-/*				app.model.addDispatchToQ({
-					'_cmd':'adminImageUpload',
-					'base64' : btoa(evt.target.result), //btoa is binary to base64
-					'folder' : folder,
-					'filename' : newFileName,
-					'_tag':	{
-						'callback' : function(rd){
-//							if(typeof o.upload === 'function')	{
-//								o.upload(file,event,rd);
-//								}
-							}
-						}
-					},'passive');
-				app.model.dispatchThis('passive');
 */
-			}
-			reader.readAsBinaryString(file);
+
+function runIt()	{
+	$('#frank').anyupload({
+		filetypes : ['image/png']
+		});
 	}
 
 </script>
 
 </head>
 
-<body onLoad="$('#frank').anyupload();">
+<body onLoad="runIt();">
  
  
  
-<div id='frank' style='background:red; height:100px;'></div> 
+<div id='frank' style='background:red; min-height:100px;'></div> 
  
- 
-<button onClick='startUploads();'>Start Upload</button>
-<input type="file" id="files" name="files[]" multiple />
-<ol id="list"></ol>
-
-<script>
-function handleFileSelect(evt) {
-	var files = evt.target.files; // FileList object
-
-	// Loop through the FileList and render image files as thumbnails.
-	for (var i = 0, f; f = files[i]; i++) {
-      var reader = new FileReader();
-
-      // Closure to capture the file information.
-      reader.onload = (function(f) {
-        return function(e) {
-		var fileType = f.type.match('image.*') ? 'image' : 'file';
-
-// Render thumbnail.
-		var span = $('<li>').addClass('newMediaFile');
-		span.data('file',f);
-		var html = [
-			'<strong>',
-			escape(f.name),
-			'</strong> (', f.type || 'n/a', ') - ',
-			f.size, ' bytes, last modified: ',
-			f.lastModifiedDate ? f.lastModifiedDate.toLocaleDateString() : 'n/a',
-//if the filetype isn't an image, use a class to show a generic icon.
-			(fileType == 'image' ? '<img class="fileUpload_'+fileType+'" src="'+e.target.result+'" title="'+escape(f.name)+'"/>' : '<span class="newMediaFile fileUpload_'+fileType+'></span>'),
-			'<br />',
-			'<progress value="0.1">','<span>10</span>%','</progress>','<button>cancel</button>'].join('');
-//		console.log(html);
-          span.append(html);
-          $('#list').append(span);
-        };
-      })(f);
-
-      // Read in the image file as a data URL.
-      reader.readAsDataURL(f);
-    }
-  }
-//http://www.html5rocks.com/en/tutorials/file/dndfiles/
-$('#files').on('change',function(e){
-	handleFileSelect(e);
-	});
-//  document.getElementById('files').addEventListener('change', handleFileSelect, false);
-</script>
-
 </body>
 </html>
