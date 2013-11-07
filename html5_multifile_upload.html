@@ -65,6 +65,8 @@ https://developer.mozilla.org/en-US/docs/Using_files_from_web_applications
 
 */
 
+
+
 (function($) {
 	$.widget("ui.anyupload",{
 		options : {
@@ -126,7 +128,7 @@ https://developer.mozilla.org/en-US/docs/Using_files_from_web_applications
 			var newFiles = new Array();
 			var errors = '';
 //filter by filetypes is any are specified.
-			if(this.options.filetypes.length)	{
+			if(typeof this.options.filetypes == 'object' && this.options.filetypes.length)	{
 				console.log(" -> filetypes filter is ON and running.");
 				for(var i = 0, L = files.length; i < L; i += 1)	{
 //					console.log(i+"). filetype: "+files[i].type);
@@ -139,7 +141,18 @@ https://developer.mozilla.org/en-US/docs/Using_files_from_web_applications
 					}
 				}
 //filter by fileclass if one is specified.
-//			else if(this.options.fileclass)	{}
+			else if(typeof this.options.fileclass == 'string')	{
+
+				for(var i = 0, L = files.length; i < L; i += 1)	{
+					if(files[i].type.indexOf(this.options.fileclass) > -1)	{
+						newFiles.push(files[i]);
+						}
+					else	{
+						errors += "<li>"+files[i].name+" is not a valid type ["+files[i].type+"] for this upload.</li>";
+						}
+					}
+
+				}
 			else	{
 				newFiles = files;
 				}
@@ -260,7 +273,8 @@ function startUploads()	{
 
 function runIt()	{
 	$('#frank').anyupload({
-		filetypes : ['image/png']
+		fileclass : 'image'
+//		filetypes : ['image/png']
 		});
 	}
 
