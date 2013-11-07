@@ -63,7 +63,17 @@
 						}
 //					console.log(" -> after toggle, cb.prop('checked'): "+$cb.prop('checked'));
 					});
-
+//even though the checkbox is disabled, we have to watch for programatic changes to the checkbox.
+				$cb.on('change.anycb',function(){
+					//console.log(" -> anycb is toggled. checked: "+$cb.is(':checked'));
+					if($cb.is(':checked')){
+						self._turnOn();
+						}
+					else	{
+						self._turnOff();
+						}
+//					console.log(" -> after toggle, cb.prop('checked'): "+$cb.prop('checked'));
+					});
 
 				}
 

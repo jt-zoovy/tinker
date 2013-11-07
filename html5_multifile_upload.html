@@ -1,0 +1,307 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>HTML 5 XHR ( XMLRequestObject) mutiple file upload</title>
+
+<link rel="stylesheet" href="http://code.jquery.com/ui/1.10.2/themes/smoothness/jquery-ui.css" />
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
+<script src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.10.3/jquery-ui.min.js"></script>
+
+
+<style>
+  .fileUpload_image {
+    height: 45px;
+    border: 1px solid #ccc;
+    margin: 0px 5px 0 0;
+  }
+
+.ui-widget-anyupload-buttonset	{
+	position:absolute;
+	top:0;
+	right:0;
+	}
+
+
+
+
+</style>
+
+<script type='text/javascript'>
+/*
+
+Needs to support an onload being passed in.  pass into onload evt,file,$ele (optional)
+how does this interact w/ dropzone? same plugin? different?
+for preview output, support a templateID being passed in then pass it through anycontent.
+once requests begin, disable all cancel button.
+once file is complete, set a timeout to slideUp the file preview.
+add a counter for 4/9 files completed.
+at dispatch start, add a counter to the container element for how many items there are. use this to compare against after each dispatch to see if it was the last.
+*/
+
+
+
+
+///// anydropzone \\\\\
+/*
+turn any element into a drop zone for files to be dragged from a users desktop onto the browser.
+
+a lot of this code came from here:
+https://developer.mozilla.org/en-US/docs/Using_files_from_web_applications
+
+*/
+
+(function($) {
+	$.widget("ui.anyupload",{
+		options : {
+//			fileclass : null, //can be a more blanket 'type'. vals: image, text, spreadsheet. if set, get's tested BEFORE filetype.
+//			filetypes : null, //pass in an array of file types supported. ex ['csv','xls']
+			templateID : null, // will be used if no fileSelected function is set.
+			fileSelected : null, //pass in a function w/ dispatch. (onload for reader). Should contain both 'preview' and 'dispatch'.
+			fileUploadComplete : null, //run after each file.
+			uploadsComplete : null, //run after ALL files are done.
+			autoUpload : true, //will upload the file as soon as it's dragged/selected.
+			maxFiles : null, //if a # is set, only that # of files will be allowed.
+			maxConcurrentUploads : 4, //if X, only X requests will run simultaneously and when one finishes, the next one fires.
+//			imageAttributes : null, //an object: {h:100,w:100,b:'ffffff'}.
+			folder : null, //folder in media library where images are placed.
+			_preview : null, //used to store the preview.
+//events
+			drop : this._defaultDrop, //a function executed when a file is dropped. executed for each file. file,event passed in.
+			upload : null //a function executed after the upload has occured. executed for each file. file,event,responsedata passed in. executed whether response contains errors or not.
+			},
+		_init : function(){
+//			app.u.dump('got to init');
+			var
+				$dropzone = this.element,
+				anyfiledrop = this; //inside the event handlers below, 'this' loses context.
+			
+			if($dropzone.data('widget-anyupload'))	{} //already an anydropzone
+			else{
+				$dropzone.data('widget-anyupload',true).addClass('anydropzone').css('position','relative'); // relative positioning needed for file upload icon.
+				
+				this._addButtons();
+
+				$dropzone.on("dragover dragenter", function(event) {
+					event.stopPropagation();
+					event.preventDefault();
+					})
+
+				$dropzone.on("drop",function(event){
+					event.preventDefault();
+					event.stopPropagation();
+					anyfiledrop._drop(event);
+					});
+				}			
+
+			}, //_init
+// adds the buttons for opening the browser file dialog and starting the upload process		
+		_addButtons : function()	{
+			var self = this;
+			var $buttonSet = $("<div \/>").addClass('ui-widget-anyupload-buttonset smallButton');
+			$buttonSet.append('<input type="file" class="ui-widget-anyfile-fileinput" name="files[]" multiple style="display:none;" />');
+			$("<button \/>").text('Select Files').button({icons: {primary: "ui-icon-document"},text: false}).on('click',function(){
+				$(this).parent().find(".ui-widget-anyfile-fileinput").trigger('click');
+				}).appendTo($buttonSet);
+			if(!this.options.autoUpload)	{
+				$("<button \/>").text('Start Upload').button({icons: {primary: "ui-icon-arrowthickstop-1-n"},text: false}).button('disable'); //will be enabled once a file is selected
+				}
+			$('.ui-widget-anyfile-fileinput',$buttonSet).on('change',function(event){
+				self.filesChangeEvent(event,self);
+				});
+			this.element.append($buttonSet);
+			},
+
+
+		_defaultDrop : function(files,event){
+			var self = this;
+			for (var i = 0; i < files.length; i++) {
+				var file = files[i];
+				var fileType = f.type.match('image.*') ? 'image' : 'file';
+// !!! This is where the check should go for file types. if no match, stop and throw a warning.
+//				var imageType = /image.*/;
+//				if (!file.type.match(imageType)) {
+//					continue;
+
+
+				if(self.options.templateID)	{
+					
+					}
+				else	{
+				// Render thumbnail.
+					var $img = $('<img>').addClass('newMediaFile fileUpload_'+fileType);
+					$img.data('file',f);
+					$img.appendTo($target);
+					}
+				var reader = new FileReader();
+				reader.onload = (function(aImg) { return function(e) { aImg.src = e.target.result; }; })($img.attr());
+				reader.readAsDataURL(file);
+				app.ext.admin.u.handleSaveButtonByEditedClass($target.closest('form')); //updates the save button change count.
+				}
+			},
+
+		filesChangeEvent : function(evt,self)	{
+			console.log(" --------> fileChangeEvent triggered");
+			var files = evt.target.files; // FileList object
+			self._defaultDrop(evt.target.files,evt);
+			},
+
+		_setOption : function(option,value)	{
+			$.Widget.prototype._setOption.apply( this, arguments ); //method already exists in widget factory, so call original.
+			}, //_setOption
+
+		_sendFiles : function()	{
+			var imgs = document.querySelectorAll(".newMediaFile");
+			for (var i = 0; i < imgs.length; i++) {
+				this._fileUpload(imgs[i], imgs[i].file);
+				}
+			},
+
+		_fileUpload : function(img, file)	{
+			
+			var newFileName = file.name.replace(/[^A-Za-z0-9]+/ig, "_").toString().toLowerCase(); //alphanumeric only (this will include underscores). the +/ig will replace multiple spaces/specialcharacters in a row w/ 1 underscore.
+			app.u.dump(" revised filename: "+newFileName);
+			var o = this.options;
+			var reader = new FileReader();  
+			var folder = o.folder || newFileName.charAt(0);
+			$(img).attr('data-filename',folder+'/'+newFileName); //used during the save.
+			reader.onload = function(evt) {
+				app.model.addDispatchToQ({
+					'_cmd':'adminImageUpload',
+					'base64' : btoa(evt.target.result), //btoa is binary to base64
+					'folder' : folder,
+					'filename' : newFileName,
+					'_tag':	{
+						'callback' : function(rd){
+//							if(typeof o.upload === 'function')	{
+//								o.upload(file,event,rd);
+//								}
+							}
+						}
+					},'passive');
+				app.model.dispatchThis('passive');
+//				xhr.sendAsBinary(evt.target.result);
+				};
+			reader.readAsBinaryString(file);
+			},
+
+//executed when a file is dropped onto a dropzone.
+		_drop : function(event)	{
+			app.u.dump(" -> a file has been dropped into a dropzone.");
+			event.preventDefault();
+			var dt = event.originalEvent.dataTransfer; //moz def. wants to look in orginalEvent. docs online looked just in event.dataTransfer.
+			new this.options.drop(dt.files,event,this); // !!! revisit this. should pass in 'events' and 'ui' like other plugins. need to figure that out.
+			this._sendFiles();
+			}, //_drop
+
+
+		_destroy : function(){
+			this.element.empty();
+			} //_destroy
+		}); // create the widget
+})(jQuery); 
+
+
+
+
+
+
+
+
+
+function startUploads()	{
+	$(".newMediaFile").each(function(){
+		fileUpload($(this), $(this).data('file'));
+		});
+	}
+
+function fileUpload(img, file)	{
+
+			var newFileName = file.name.replace(/[^A-Za-z0-9]+/ig, "_").toString().toLowerCase(); //alphanumeric only (this will include underscores). the +/ig will replace multiple spaces/specialcharacters in a row w/ 1 underscore.
+			console.log(" revised filename: "+newFileName);
+//			var o = this.options;
+			var reader = new FileReader(); 
+//			var folder = o.folder || newFileName.charAt(0);
+//			$(img).attr('data-filename',folder+'/'+newFileName); //used during the save.
+			reader.onload = function(evt) {
+				console.log(' GOT TO HERE!!!!!!!!!!');
+/*				app.model.addDispatchToQ({
+					'_cmd':'adminImageUpload',
+					'base64' : btoa(evt.target.result), //btoa is binary to base64
+					'folder' : folder,
+					'filename' : newFileName,
+					'_tag':	{
+						'callback' : function(rd){
+//							if(typeof o.upload === 'function')	{
+//								o.upload(file,event,rd);
+//								}
+							}
+						}
+					},'passive');
+				app.model.dispatchThis('passive');
+*/
+			}
+			reader.readAsBinaryString(file);
+	}
+
+</script>
+
+</head>
+
+<body onLoad="$('#frank').anyupload();">
+ 
+ 
+ 
+<div id='frank' style='background:red; height:100px;'></div> 
+ 
+ 
+<button onClick='startUploads();'>Start Upload</button>
+<input type="file" id="files" name="files[]" multiple />
+<ol id="list"></ol>
+
+<script>
+function handleFileSelect(evt) {
+	var files = evt.target.files; // FileList object
+
+	// Loop through the FileList and render image files as thumbnails.
+	for (var i = 0, f; f = files[i]; i++) {
+      var reader = new FileReader();
+
+      // Closure to capture the file information.
+      reader.onload = (function(f) {
+        return function(e) {
+		var fileType = f.type.match('image.*') ? 'image' : 'file';
+
+// Render thumbnail.
+		var span = $('<li>').addClass('newMediaFile');
+		span.data('file',f);
+		var html = [
+			'<strong>',
+			escape(f.name),
+			'</strong> (', f.type || 'n/a', ') - ',
+			f.size, ' bytes, last modified: ',
+			f.lastModifiedDate ? f.lastModifiedDate.toLocaleDateString() : 'n/a',
+//if the filetype isn't an image, use a class to show a generic icon.
+			(fileType == 'image' ? '<img class="fileUpload_'+fileType+'" src="'+e.target.result+'" title="'+escape(f.name)+'"/>' : '<span class="newMediaFile fileUpload_'+fileType+'></span>'),
+			'<br />',
+			'<progress value="0.1">','<span>10</span>%','</progress>','<button>cancel</button>'].join('');
+//		console.log(html);
+          span.append(html);
+          $('#list').append(span);
+        };
+      })(f);
+
+      // Read in the image file as a data URL.
+      reader.readAsDataURL(f);
+    }
+  }
+//http://www.html5rocks.com/en/tutorials/file/dndfiles/
+$('#files').on('change',function(e){
+	handleFileSelect(e);
+	});
+//  document.getElementById('files').addEventListener('change', handleFileSelect, false);
+</script>
+
+</body>
+</html>

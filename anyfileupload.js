@@ -1,5 +1,5 @@
 (function($) {
-	targetPHP = "https://www.zoovy.com/webapi/jquery/index.cgi?up=true"; // global for testing.
+	var targetPHP = "https://www.zoovy.com/webapi/jquery/index.cgi?up=true"; // global for testing.
 	$.widget("ui.anyfiledrop",{
 		options : {
 			filetypes : null, //pass in an array of file types supported. ex ['csv','xls']
