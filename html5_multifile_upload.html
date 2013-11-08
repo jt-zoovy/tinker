@@ -111,7 +111,7 @@ https://developer.mozilla.org/en-US/docs/Using_files_from_web_applications
 				self = this,
 				$buttonSet = $("<div \/>").addClass('ui-widget-anyupload-buttonset smallButton');
 
-			$buttonSet.append('<input type="file" class="ui-widget-anyfile-fileinput" name="files[]" multiple style="display:none;" />');
+			$buttonSet.append('<input type="file" class="ui-widget-anyfile-fileinput" '+(self.options.maxSelectableFiles === 1 ? '' : 'multiple' )+' name="files[]" style="display:none;" />');
 			$("<button \/>").text('Select Files').button({icons: {primary: "ui-icon-document"},text: true}).on('click',function(){
 				$(this).parent().find(".ui-widget-anyfile-fileinput").trigger('click');
 				}).appendTo($buttonSet);
@@ -273,7 +273,8 @@ function startUploads()	{
 
 function runIt()	{
 	$('#frank').anyupload({
-		fileclass : 'image'
+		fileclass : 'image',
+		maxSelectableFiles : 2
 //		filetypes : ['image/png']
 		});
 	}
