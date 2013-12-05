@@ -1,0 +1,123 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>Untitled Document</title>
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
+<script type="text/javascript" src="jquery.cycle2.min.js"></script>
+<script type="text/javascript" src="jquery.cycle2.swipe.min.js"></script>
+<script type="text/javascript" src="jquery.cycle2.caption2.min.js"></script>
+
+
+<style>
+/*
+    these are just the default styles used in the Cycle2 demo pages.  
+    you can use these styles or any others that you wish.
+*/
+
+
+/* set border-box so that percents can be used for width, padding, etc (personal preference) */
+.cycle-slideshow, .cycle-slideshow * { -webkit-box-sizing: border-box; -moz-box-sizing: border-box; box-sizing: border-box; }
+
+
+.cycle-slideshow { width: 45%; min-width: 200px; max-width: 500px; margin: 10px auto; padding: 0; position: relative;
+    background: url(http://malsup.github.com/images/spinner.gif) 50% 50% no-repeat;
+
+ }
+
+/* slideshow images (for most of the demos, these are the actual "slides") */
+.cycle-slideshow img { 
+    /* 
+    some of these styles will be set by the plugin (by default) but setting them here
+    helps avoid flash-of-unstyled-content
+    */
+    position: absolute; top: 0; left: 0;
+    width: 100%; padding: 0; display: block;
+}
+
+/* in case script does not load */
+.cycle-slideshow img:first-child {
+    position: static; z-index: 100;
+}
+
+/* pager */
+.cycle-pager { 
+    text-align: center; width: 100%; z-index: 500; position: absolute; top: 10px; overflow: hidden;
+	margin:0; padding:0;
+	}
+.cycle-pager span {
+	-webkit-border-radius: 10px;
+	border-radius: 10px; 
+    font-size: 1px; line-height:16px; width: 16px; height: 16px; background:#ffffff; margin-right:4px; border:1px solid #9eca37;
+    color: #fff; cursor: pointer; display:inline-block;
+	}
+.cycle-pager span.cycle-pager-active {background:#9eca37; color: #9eca37;}
+
+
+/* caption */
+.cycle-caption { position: absolute; color: white; bottom: 15px; right: 15px; z-index: 700; }
+
+
+/* overlay */
+.cycle-overlay { 
+    font-family: tahoma, arial;
+    position: absolute; bottom: 0; width: 100%; z-index: 600;
+    background: black; color: white; padding: 15px; opacity: .5;
+	}
+
+
+/* display paused text on top of paused slideshow */
+.cycle-paused:after {
+    content: 'Paused'; color: white; background: black; padding: 5px 10px;
+    z-index: 500; position: absolute; top: 10px; right: 10px;
+    opacity: .5; filter: alpha(opacity=50);
+	}
+
+/* 
+    media queries 
+    some style overrides to make things more pleasant on mobile devices
+*/
+
+@media only screen and (max-width: 480px), only screen and (max-device-width: 480px) {
+    .cycle-slideshow { width: 200px;}
+    .cycle-overlay { padding: 4px }
+    .cycle-caption { bottom: 4px; right: 4px }
+	}
+</style>
+
+
+</head>
+
+<body>
+
+
+<div id='mySlideshow' class="cycle-slideshow" 
+	data-cycle-fx="scrollHorz" 
+	data-cycle-timeout="5000" 
+	data-cycle-slides="> div" 
+	data-cycle-swipe="true" 
+	data-cycle-prev=".prev" 
+	data-cycle-next=".next" 
+	data-cycle-pause-on-hover="true">
+	<nav class="cycle-pager"></nav>
+	<div>
+		<img src="https://static---sporks.app-hosted.com/media/img/sporks/-/models/30350365_square.jpg">
+		<div class="cycle-overlay">munich Gardens</div>
+    </div>
+	<div>
+		<img src="https://static---sporks.app-hosted.com/media/img/sporks/-/models/30357846_square.jpg">
+		<div class="cycle-overlay">paris Gardens</div>
+    </div>
+	<div>
+		<img src="https://static---sporks.app-hosted.com/media/img/sporks/-/models/30459679_square.jpg">
+		<div class="cycle-overlay">compton Gardens</div>
+    </div>
+	<div>
+		<img src='https://static---sporks.app-hosted.com/media/img/sporks/-/models/9778474_square.jpg' />
+		<div class="cycle-overlay">Sonnenberg Gardens</div>
+    </div>
+</div>
+
+
+</body>
+</html>

@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>Any Message</title>
+
+
+
+<link rel="stylesheet" type="text/css" href="jquery-ui-1.9.2.custom.min.css"/>
+<style type='text/css'>
+.queryMatch	{background-color : #FCC;}
+</style>
+
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>
+<script src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.9.2/jquery-ui.min.js"></script>
+
+<script>
+
+function filterThis(t){
+	var $input = $(t);
+	var $tbody = $input.closest('table').find('tbody');
+	if($('td.isSearchable',$tbody).length)	{
+		if($input.val().length >= 2)	{
+//only rows that are not already hidden are impacted. In some cases, some other operation may have hidden the row and we don't want our 'unhide' later to show them.
+			$('tr:visible',$tbody).hide().data('hidden4Search',true);
+			$('td.isSearchable',$tbody).each(function(){
+				if($(this).text().indexOf($input.val()) >= 0)	{
+					$(this).closest('tr').show();
+					$(this).addClass('queryMatch')
+					}
+				})
+			}
+		else	{
+		//no query or short query. unhide any rows (query may have been removed).
+			$('tr',$tbody).each(function(){
+				if($(this).data('hidden4Search'))	{$(this).show();}
+				});
+			$('.queryMatch',$tbody).removeClass('queryMatch');
+			}
+		}
+	else	{
+		//there are no td's tagged as searchable. what to do here?
+		}
+
+	}
+
+
+</script>
+
+</head>
+
+<body style="font-family:'Palatino Linotype', 'Book Antiqua', Palatino, serif;" onload="$(':checkbox').each(function(){$(this).anycb()});">
+
+
+<table>
+<thead>
+<tr>
+	<th>Fruit</th>
+	<th>Transformer</th>
+	<th>Number</th>
+</tr>
+<tbody>
+<tr>
+	<td class='isSearchable'>apple</td>
+	<td class='isSearchable'>Prime</td>
+	<td class='isSearchable'>10</td>
+</tr>
+<tr>
+	<td class='isSearchable'>banana</td>
+	<td class='isSearchable'>Megatron</td>
+	<td class='isSearchable'>9</td>
+</tr>
+<tr>
+	<td class='isSearchable'>prune</td>
+	<td class='isSearchable'>Prime</td>
+	<td class='isSearchable'>15</td>
+</tr>
+<tr>
+	<td class='isSearchable'>apple</td>
+	<td class='isSearchable'>bumblebee</td>
+	<td class='isSearchable'>10</td>
+</tr>
+<tr>
+	<td class='isSearchable'>grape</td>
+	<td class='isSearchable'>Prime</td>
+	<td class='isSearchable'>19</td>
+</tr>
+<tr>
+	<td class='isSearchable'>pineapple</td>
+	<td class='isSearchable'>jazz</td>
+	<td class='isSearchable'>10</td>
+</tr>
+<tr>
+	<td class='isSearchable'>grape</td>
+	<td class='isSearchable'>megatron</td>
+	<td class='isSearchable'>10</td>
+</tr>
+</tbody>
+<tfoot>
+<tr>
+	<td colspan='3'>
+	<label>Filter <input name='tableSearchQuery' type='search' placeholder='filter value' onKeyUp="filterThis(this)" /></label>
+	</td>
+</tr>
+</tfoot>
+</table>
+
+</body>
+</html>
