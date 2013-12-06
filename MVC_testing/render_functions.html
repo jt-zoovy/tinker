@@ -1,0 +1,176 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>Untitled Document</title>
+
+
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
+<script src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.10.3/jquery-ui.min.js"></script>
+
+<script>
+
+var app = {
+
+	u : {
+		getObjValFromString : function (s,obj,char)	{
+			char = char || '.';
+			var o=obj, attrs=s.split(char);
+			while (attrs.length > 0) {
+				o = o[attrs.shift()];
+				//I don't think this is handling zero well. !!!
+				if (!o) {o= null; break;}
+				}
+			return o;
+
+			} //getObjValFromString
+		},
+
+	renderFunctions : {
+		
+		
+//pass in product(zoovy:prod_name) zoovy:prod_name is returned.
+//used in template creation and also in some UI stuff, like product finder.
+		parseDataVar : function(v)	{
+			var r; //what is returned.
+			if(v)	{
+				r = v.replace(/.*\(|\)/gi,'');
+				}
+			else	{r = false;}
+			return r;
+			},
+
+//as part of the data-bind is a var: for the data location (product: or cart:).
+//this is used to parse that to get to the data.
+//if no namespace is passed (zoovy: or user:) then the 'root' of the object is used.
+//%attribs is passed in a cart spec because that's where the data is stored.
+		getAttributeValue : function(v,data)	{
+//app.u.dump('BEGIN app.renderFunctions.getAttributeValue');
+			if(!v || !data)	{
+				value = false;
+				}
+			else	{
+				var value;
+				var attributeID = this.parseDataVar(v); //used to store the attribute id (ex: zoovy:prod_name), not the actual value.
+				var namespace = v.split('(')[0];
+
+				if(namespace == 'product' && attributeID.indexOf(':') > -1)	{
+					attributeID = '%attribs.'+attributeID; //product data is nested, but to keep templates clean, %attribs isn't required.
+					value = app.u.getObjValFromString(attributeID,data,'.') || data[attributeID]; //attempt to set value based on most common paths
+					}
+				else if(namespace == 'cart' || namespace == 'order')	{
+					value = app.u.getObjValFromString(attributeID,data,'/') || data[attributeID]; //attempt to set value based on most common paths
+					}
+				else	{
+					value = app.u.getObjValFromString(attributeID,data,'.') || data[attributeID]; //attempt to set value based on most common paths
+					}
+				}
+			return value;
+			},
+
+
+
+//will return an array of objects.
+		parseDataBindIntoRules : function(dataBind) {
+			var tokens = dataBind.split(';'), rules = new Array();
+			tokens.pop(); //strip the last item from the array, which will be blank.
+			for(var i = 0,L = tokens.length; i < L; i += 1)	{
+				var tmp = {};
+				tmp[$.trim(tokens[i].substring(0,tokens[i].indexOf(':')))] = $.trim(tokens[i].substring(tokens[i].indexOf(':') + 1))
+				rules.push(tmp);
+				}
+			return rules;
+			},
+
+
+
+
+//this parses the 'css-esque' format of the data-bind.  It's pretty simple (fast) but will not play well if a : or ; is in any of the values.
+//css can be used to add or remove those characters for now.
+//will convert key/value pairs into an object.
+// NOTE -> there is a server-side parseDataBind function. change this with caution.
+		parseDataBind : function(data)	{
+//			app.u.dump('BEGIN parseDataBind');
+			var rule = {};
+			if(data)	{
+				var declarations = data.split(';');
+				declarations.pop(); //the ending ; causes the last entry to be blank. this removes it. also means the data bind MUST end in a ;
+				var len = declarations.length;
+				for (var i = 0; i < len; i++)	{
+					var loc = declarations[i].indexOf(':'); //splits at first :. this may mean : in the values is okay. test.
+//remove whitespace from property otherwise could get invalid 'key'.
+					var property = jQuery.trim(declarations[i].substring(0, loc)); 
+//					var value = jQuery.trim(declarations[i].substring(loc + 1));  //commented out 12/15/12. may want a space in the value.
+					var value = declarations[i].substring(loc + 1);
+//						app.u.dump(' -> property['+i+']: '+property);
+//						app.u.dump(' -> value['+i+']: "'+value+'"');
+					if(property != "" && value != "" && !rule[property])	{ //only the first property wins. discard the rest. (var can't be set twice)
+//need to trim whitespace from values except pre and post text. having whitespace in the value causes things to not load. However, it's needed in pre and post text.
+						rule[property] = (property.charAt(0) == '_') ? value : jQuery.trim(value); 
+						}
+					}
+				}
+
+//			app.u.dump('END parseDataBind');
+			return rule;
+			},
+			
+		processRules : function(db,data)	{
+			var
+				dbRules = app.renderFunctions.parseDataBindIntoRules(db),
+				dbObject = app.renderFunctions.parseDataBind(db),
+				value = this.getAttributeValue(dbObject.var,data)
+				
+			console.log(" -> VALUE: "+value);
+//			console.log(dbRules);
+			
+			var rules = {
+				'-zero' : function(a)	{return a == 0 ? false : true},
+				'-blank' : function(a)	{return (a) ? true : false},
+				le : function(a,b)	{return (a <= b ? true : false)},
+				lt : function(a,b)	{return (a < b ? true : false)},
+				ge : function(a,b)	{return (a >= b ? true : false)},
+				gt : function(a,b)	{return (a > b ? true : false)},
+				eq : function(a,b)	{return (a == b ? true : false)},
+				ne : function(a,b)	{return (a != b ? true : false)}
+				}
+			
+			for(var i = 0, L = dbRules.length; i < L; i += 1)	{
+				console.log(i+") "+dbRules[i]);
+				}
+
+			
+			}
+		}	
+	}
+
+
+var product = {
+	'%attribs' : {
+		'zoovy:prod_name' : 'something',
+		'zoovy:base_price' : '4.95',
+		'zoovy:prod_msrp' : 0,
+		'zoovy:prod_desc' : 'bacon ipsum',
+		'zoovy:prod_detail' : '',
+		'zoovy:prod_features' : null
+		}}
+
+var db = "var: product(zoovy:prod_name); format:text; _pretext: this B pretext with spaces : ; posttext : posttext w/out spaces ;";
+app.renderFunctions.processRules(db,product);
+
+
+
+</script>
+
+
+
+
+
+
+</head>
+
+<body>
+
+
+</body>
+</html>
