@@ -198,17 +198,18 @@ valid rule formats for 'if':
 */
 
 					if(condition == 'if')	{
-						var a,b,command,comparison; //a is value in focus. b is value passed for comparison.
+						var comparison; //a is value in focus. b is value passed for comparison.
 						comparison = $.trim(thisRule.split(':')[1].split('(')[0]); //if-$map:le($base), comparison = le
 						//if an invalid comparison was specified, skip the execution.
 						if(comparisons[comparison])	{
 							console.log(' -> a valid comparison function exists for "'+comparison+'"');
+
+							var a, b = this.parseDataVar(thisRule.split(':')[1]); // if-$map:le($base), b = $base string. can be used later for vars lookup. if-$map:le(10), b = 10
+
 							if(preColon.indexOf('-') == -1)	{a = vars.$_} //if:le($base)
 							else if(isVar(preColon.split('-')[1]))	{a = vars[preColon.split('-')[1]]} //if-$map:le($base)
-							else	{
-								a = preColon.split('-')[1];
-								}
-							b = this.parseDataVar(thisRule.split(':')[1]); // if-$map:le($base), b = $base string. can be used later for vars lookup
+							else	{a = preColon.split('-')[1];} // //if-$map:le(10)
+
 							if(comparisons[comparison](a,(isVar(b) ? vars[b] : b)))	{
 								console.log(' -> comparisons['+comparison+'] returned true. Carry on.');
 								//condition is TRUE. Continue normally w/ rules processing. take no action.
@@ -234,8 +235,14 @@ else-pretext: Map;
 then-format: truncText(chars:50;);
 */
 					else if(condition == 'then' || condition == 'else')	{
-						var comparison = preColon.split('-')[1], // will = 'pretext' or 'set' or 'le'
-						command = thisRule.split(':')[1];
+						var command = preColon.split('-')[1]; //then-set: $base;, command = set
+						var b = $.trim(thisRule.split(':'));
+						if(commands[command])	{
+							commands[command](vars.$_,(isVar(b)) ? vars[b] : b,data,$tag);
+							}
+						else	{
+							//invalid command specified in then/else. what to do? ### TODO
+							}
 						}
 					else	{
 						//unsupported condition. now what? ### TODO
@@ -260,8 +267,8 @@ var product = {
 		'zoovy:prod_features' : null
 		}}
 
-var db = "var: product(zoovy:prod_name); if:isblank; format:text; _pretext: this B pretext with spaces : ; posttext : posttext w/out spaces ;";
-app.renderFunctions.processRules(db,product);
+var db = "var: product(zoovy:prod_name); if:notblank; format:text; _pretext: this B pretext with spaces : ; posttext : posttext w/out spaces ;";
+app.renderFunctions.processRules(db,product,$("#test"));
 
 
 
@@ -276,6 +283,7 @@ app.renderFunctions.processRules(db,product);
 
 <body>
 
+<div id='test'></div>
 
 </body>
 </html>
