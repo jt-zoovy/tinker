@@ -75,9 +75,10 @@ var app = {
 			var tokens = dataBind.split(';'), rules = new Array();
 			tokens.pop(); //strip the last item from the array, which will be blank.
 			for(var i = 0,L = tokens.length; i < L; i += 1)	{
-				var tmp = {};
-				tmp[$.trim(tokens[i].substring(0,tokens[i].indexOf(':')))] = $.trim(tokens[i].substring(tokens[i].indexOf(':') + 1))
-				rules.push(tmp);
+//				var tmp = {};
+//				tmp[$.trim(tokens[i].substring(0,tokens[i].indexOf(':')))] = $.trim(tokens[i].substring(tokens[i].indexOf(':') + 1))
+//				rules.push(tmp);
+				rules.push(tokens[i]);
 				}
 			return rules;
 			},
@@ -114,29 +115,120 @@ var app = {
 //			app.u.dump('END parseDataBind');
 			return rule;
 			},
-			
+
+// db = data bind.  A string formatted in a manner similar to CSS, full of key value pairs.
+// data = the data object that is going to be used for translating the data binds.
 		processRules : function(db,data)	{
 			var
-				dbRules = app.renderFunctions.parseDataBindIntoRules(db),
-				dbObject = app.renderFunctions.parseDataBind(db),
-				value = this.getAttributeValue(dbObject.var,data)
-				
-			console.log(" -> VALUE: "+value);
-//			console.log(dbRules);
+				dbRules = app.renderFunctions.parseDataBindIntoRules(db), //returns an array of strings w/ each key value pair of the db as an entry. returns in order.
+				dbObject = app.renderFunctions.parseDataBind(db), //an object of the databind key : value
+				vars = {
+					$_ : this.getAttributeValue(dbObject.var,data)
+					} //storing the values in an object means easy lookup w/out an eval.
 			
-			var rules = {
-				'-zero' : function(a)	{return a == 0 ? false : true},
-				'-blank' : function(a)	{return (a) ? true : false},
-				le : function(a,b)	{return (a <= b ? true : false)},
-				lt : function(a,b)	{return (a < b ? true : false)},
-				ge : function(a,b)	{return (a >= b ? true : false)},
-				gt : function(a,b)	{return (a > b ? true : false)},
-				eq : function(a,b)	{return (a == b ? true : false)},
-				ne : function(a,b)	{return (a != b ? true : false)}
+		
+			// a always = values.$_
+			// b is the comparison value, if set.
+			// $t is '$(this)', the jquery object that has the data-bind on it.
+			// rf is the renderFormat
+			//by the time the verbs are executed, the preceding dash has been stripped.
+			var comparisons = {
+				iszero : function(a)	{return (a === 0) ? true : false;},
+				notzero : function(a)	{return (a != 0) ? true : false;},
+				isblank : function(a)	{return (!a) ? true : false;},
+				notblank : function(a)	{return (a) ? true : false;},
+				le : function(a,b)	{return (a <= b) ? true : false;},
+				lt : function(a,b)	{return (a < b) ? true : false;},
+				ge : function(a,b)	{return (a >= b) ? true : false;},
+				gt : function(a,b)	{return (a > b) ? true : false;},
+				eq : function(a,b)	{return (a == b) ? true : false;},
+				ne : function(a,b)	{return (a != b) ? true : false;}
 				}
-			
+
+			var commands = {
+ //### TODO  This'll need love. renderFormats want $tag and special 'data' object. build that object within THIS function so that the 'format' function here is all-inclusive and no special 'if' is necessary in the command loop.
+				format: function(a,b,$t,rf)	{return f($t);},
+				set : function(a,b)	{b = a; return true;},
+				wrap : function(){},
+				pretext : function(a,b)	{a = b.toString()+a.toString(); return true;},
+				posttext : function(a,b)	{a = a.toString()+b.toString(); return true;},
+				}
+
+			function isVar(s)	{
+				var r = false; //what is returned.
+				if(s.charAt(0) == '$')	{r = true;}
+				else if(s == 'var')	{r = true;}
+				else if(s.charAt(0) == '_')	{r = true;}
+				else	{}
+				return r;
+				}
+
+//start processing the rules.
 			for(var i = 0, L = dbRules.length; i < L; i += 1)	{
-				console.log(i+") "+dbRules[i]);
+				var rule = dbRules[i].split(':')[0]; //will = 'var' or $ or if-$var or then-format
+				//$var = product(zoovy:base_price) sets vars[$var] = 4.95
+				if(isVar(rule))	{
+					if(rule.charAt(0) == '$' || rule == 'var')	{
+						values[rule] = this.getAttributeValue(dbObject[rule],data);
+						}
+					//_var = 'some value' sets vars[_var] = 'some value'. may want to use something besides _ as that's our 'no formatting' character.
+					else if(rule.charAt(0) == '_')	{
+						values[rule] = dbRules[i].split(':')[1];
+						}
+					else	{
+						//shouldn't get here. isVar checks against these rules.
+						}
+					}
+				else if(rule.indexOf('-') >= 0 || rule == 'if')	{
+					var condition = rule.split('-')[0]; //will = 'if' or 'else' or 'then'
+
+/*
+valid rule formats for 'if': 
+	if-$map:le($base)  Will an 'if' always be followed by a variable? ex: if-$map   (as opposed to an else/then else-pretext or then-format
+	if-_map: gt(10)
+	if:gt(10) -> will use $_ for comparison
+*/
+
+					if(condition == 'if')	{
+						var a,b,command,comparison; //a is value in focus. b is value passed for comparison.
+						comparison = dbRules[i].split(':')[1].split('(')[0]; //if-$map:le($base), comparison = le
+						if(comparisons[comparison])	{
+							if(rule.indexOf('-') == -1)	{a = vars.$_} //if:le($base)
+							else if(isVar(rule.split('-')[1]))	{a = vars[rule.split('-')[1]]} //if-$map:le($base)
+							else	{
+								a = rule.split('-')[1];
+								}
+							b = this.parseDataVar(dbRules[i].split(':')[1]); // if-$map:le($base), b = $base string. can be used later for vars lookup
+							if(comparisons[comparison](a,(isVar(b) ? vars[b] : b)))	{
+								//condition is TRUE. Continue normally w/ rules processing. take no action.
+								}
+							else	{
+								//condition is FALSE. See if the next rule is an else. If yes, proceed. if no, exit.
+								var nextRule = dbRules[(i+1)].split(':')[0];
+								if(nextRule.indexOf('else-') == 0)	{}
+								else	{
+									break;  //the condition in this rule was NOT met. no else was specified.
+									}
+								}
+							}
+						else	{
+							//invalid comparison specified. what to do? ### TODO
+							}
+						}
+/*
+valid rule formats for then/else
+*/
+					else if(condition == 'then' || condition == 'else')	{
+						var comparison = rule.split('-')[1], // will = 'pretext' or 'set' or 'le'
+						command = dbRules[i].split(':')[1];
+						}
+					else	{
+						//unsupported condition. now what? ### TODO
+						}
+					}
+				else	{
+					//what do we do if this isn't a command?  ### TODO
+					}
 				}
 
 			
