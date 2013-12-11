@@ -118,7 +118,7 @@ var app = {
 
 // db = data bind.  A string formatted in a manner similar to CSS, full of key value pairs.
 // data = the data object that is going to be used for translating the data binds.
-		processRules : function(db,data)	{
+		processRules : function(db,data,$tag)	{
 			var
 				dbRules = app.renderFunctions.parseDataBindIntoRules(db), //returns an array of strings w/ each key value pair of the db as an entry. returns in order.
 				dbObject = app.renderFunctions.parseDataBind(db), //an object of the databind key : value
@@ -148,6 +148,7 @@ var app = {
 			var commands = {
  //### TODO  This'll need love. renderFormats want $tag and special 'data' object. build that object within THIS function so that the 'format' function here is all-inclusive and no special 'if' is necessary in the command loop.
 				format: function(a,b,$t,rf)	{return f($t);},
+				stop : function() {return false;},
 				set : function(a,b)	{b = a; return true;},
 				wrap : function(){},
 				pretext : function(a,b)	{a = b.toString()+a.toString(); return true;},
@@ -165,22 +166,29 @@ var app = {
 
 //start processing the rules.
 			for(var i = 0, L = dbRules.length; i < L; i += 1)	{
-				var rule = dbRules[i].split(':')[0]; //will = 'var' or $ or if-$var or then-format
+				var thisRule = dbRules[i], preColon = $.trim(thisRule.split(':')[0]); //will = 'var' or $ or if-$var or then-format // ### TODO -> yes, preColon is an AWFUL var name. intentionally so for easy search and replace when I come up with something better.
+				console.log(i+") rule: "+thisRule+" and preColon: "+preColon);
 				//$var = product(zoovy:base_price) sets vars[$var] = 4.95
-				if(isVar(rule))	{
-					if(rule.charAt(0) == '$' || rule == 'var')	{
-						values[rule] = this.getAttributeValue(dbObject[rule],data);
+				if(isVar(preColon))	{
+					console.log(" -> is a var declaration");
+					if(preColon == 'var')	{
+						vars.$_ = this.getAttributeValue(dbObject[preColon],data);
+						}
+					else if(preColon.charAt(0) == '$')	{
+						vars[preColon] = this.getAttributeValue(dbObject[preColon],data);
 						}
 					//_var = 'some value' sets vars[_var] = 'some value'. may want to use something besides _ as that's our 'no formatting' character.
-					else if(rule.charAt(0) == '_')	{
-						values[rule] = dbRules[i].split(':')[1];
+					else if(preColon.charAt(0) == '_')	{
+						vars[preColon] = thisRule.split(':')[1];
 						}
 					else	{
 						//shouldn't get here. isVar checks against these rules.
 						}
+					console.log(" -> a var was added. vars: "); console.dir(vars);
 					}
-				else if(rule.indexOf('-') >= 0 || rule == 'if')	{
-					var condition = rule.split('-')[0]; //will = 'if' or 'else' or 'then'
+				else if(preColon.indexOf('-') >= 0 || preColon == 'if')	{
+					console.log(" -> is some type of conditional. preColon: "+preColon);
+					var condition = preColon.split('-')[0]; //will = 'if' or 'else' or 'then'
 
 /*
 valid rule formats for 'if': 
@@ -191,22 +199,26 @@ valid rule formats for 'if':
 
 					if(condition == 'if')	{
 						var a,b,command,comparison; //a is value in focus. b is value passed for comparison.
-						comparison = dbRules[i].split(':')[1].split('(')[0]; //if-$map:le($base), comparison = le
+						comparison = $.trim(thisRule.split(':')[1].split('(')[0]); //if-$map:le($base), comparison = le
+						//if an invalid comparison was specified, skip the execution.
 						if(comparisons[comparison])	{
-							if(rule.indexOf('-') == -1)	{a = vars.$_} //if:le($base)
-							else if(isVar(rule.split('-')[1]))	{a = vars[rule.split('-')[1]]} //if-$map:le($base)
+							console.log(' -> a valid comparison function exists for "'+comparison+'"');
+							if(preColon.indexOf('-') == -1)	{a = vars.$_} //if:le($base)
+							else if(isVar(preColon.split('-')[1]))	{a = vars[preColon.split('-')[1]]} //if-$map:le($base)
 							else	{
-								a = rule.split('-')[1];
+								a = preColon.split('-')[1];
 								}
-							b = this.parseDataVar(dbRules[i].split(':')[1]); // if-$map:le($base), b = $base string. can be used later for vars lookup
+							b = this.parseDataVar(thisRule.split(':')[1]); // if-$map:le($base), b = $base string. can be used later for vars lookup
 							if(comparisons[comparison](a,(isVar(b) ? vars[b] : b)))	{
+								console.log(' -> comparisons['+comparison+'] returned true. Carry on.');
 								//condition is TRUE. Continue normally w/ rules processing. take no action.
 								}
 							else	{
 								//condition is FALSE. See if the next rule is an else. If yes, proceed. if no, exit.
-								var nextRule = dbRules[(i+1)].split(':')[0];
-								if(nextRule.indexOf('else-') == 0)	{}
+								// ### TODO -> this will probably need to look past all 'thens' to see if an else follows the last one, then decide what to do.
+								if(dbRules[(i+1)].split(':')[0].indexOf('else-') == 0)	{console.log(' -> comparisons['+comparison+'] returned false but an else was specified. Carry on.');}
 								else	{
+									console.log(' -> comparisons['+comparison+'] returned false and no else exists. Stop! Collaborate and listen.');
 									break;  //the condition in this rule was NOT met. no else was specified.
 									}
 								}
@@ -217,10 +229,13 @@ valid rule formats for 'if':
 						}
 /*
 valid rule formats for then/else
+then-set: $base; 
+else-pretext: Map;
+then-format: truncText(chars:50;);
 */
 					else if(condition == 'then' || condition == 'else')	{
-						var comparison = rule.split('-')[1], // will = 'pretext' or 'set' or 'le'
-						command = dbRules[i].split(':')[1];
+						var comparison = preColon.split('-')[1], // will = 'pretext' or 'set' or 'le'
+						command = thisRule.split(':')[1];
 						}
 					else	{
 						//unsupported condition. now what? ### TODO
@@ -230,8 +245,6 @@ valid rule formats for then/else
 					//what do we do if this isn't a command?  ### TODO
 					}
 				}
-
-			
 			}
 		}	
 	}
@@ -247,7 +260,7 @@ var product = {
 		'zoovy:prod_features' : null
 		}}
 
-var db = "var: product(zoovy:prod_name); format:text; _pretext: this B pretext with spaces : ; posttext : posttext w/out spaces ;";
+var db = "var: product(zoovy:prod_name); if:isblank; format:text; _pretext: this B pretext with spaces : ; posttext : posttext w/out spaces ;";
 app.renderFunctions.processRules(db,product);
 
 
