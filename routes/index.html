@@ -32,13 +32,12 @@ var router = {
 		for(var i = 0, L = rArr.length; i < L; i += 1)	{
 			if(rArr[i].indexOf(':') >= 0)	{
 				rArr[i] = rArr[i].split(':')[0] || "";
-				rArr[i] += '()';
+				rArr[i] +=  '([^\\/]+)';
 				}
 			else	{
 				//no variables.
 				}
 			}
-		
 		return rArr.join('\/');
 		},
 	getKeys : function(obj)	{
@@ -70,8 +69,13 @@ var router = {
 				}
 
 			if(pattern)	{
-				var regex = new RegExp(pattern);
-				console.log("pattern: "+pattern, "    route: "+thisRoute, "    regex.test: "+regex.test(thisRoute));
+				var regex = new RegExp(pattern), isMatch = regex.exec(hash);
+				//regex.exec[0] will be the match value. so comparing that to the hash will ensure no substring matches get thru.
+				//substring matches can be accomplished w/ a regex in the route.
+				if(isMatch && isMatch[0] == hash)	{
+					r = thisRoute;
+					}
+				console.log("pattern: "+pattern, "    route: "+thisRoute, "    regex.test: "+regex.exec(hash));
 				}
 			else	{
 				console.log("no regex for route: "+thisRoute);
@@ -133,7 +137,7 @@ window.addEventListener("hashchange", router.handleHashChange, false);
 <body>
 
 <a href='#!/product/XYZ/'>product link - XYZ</a><br />
-<a href='#!/product/ABC/'>product link - ABC</a><br />
+<a href='#!/product/ABC/seo.html'>product link - ABC</a><br />
 <a href='#!/company/'>#!/company/</a><br />
 <a href='#!/company/about'>#!/company/about</a>
 
