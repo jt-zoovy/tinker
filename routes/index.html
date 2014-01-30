@@ -13,20 +13,46 @@ window.showContent = function(){}; //placeholder.
 
 
 var router = {
-	routes : [], //saved as array cuz sequence is important. hits on first match.
+	routes : {}, //an object, not an array. order is not required because route matches are implicit unless they define themselves otherwise.
 	handlers : {}, //functions executed by route.
 	
 	//proper way to add a route to the routes table. will have validation.
 	addRoute : function(route,name)	{
-		var obj = {};
-		obj[route] = name
-		this.routes.push(obj);
+		if(route && name)	{
+			if(this.routes[route])	{
+				console.warn("route: "+route+" was just overwritten");
+				}
+			this.routes[route] = {'name' : name, 'isRegExp' : route instanceof RegExp};
+			}
+		else	{
+			// either route or name not specified. throw error.
+			}
 		},
 	//proper way to add a handler. will have validation.
 	addHandler : function(name,callback)	{
-		this.handlers[name] == callback;
+		if(name && callback)	{
+			this.handlers[name] == callback;
+			}
+		else	{
+			// eithr name or callback not specified.  ### TODO -> add error.
+			}
 		},
-
+	thisIsAValidRegExp : function(pattern)	{
+		var parts = pattern.split('/'),
+				regex = pattern,
+				options = "";
+			if (parts.length > 1) {
+				regex = parts[1];
+				options = parts[2];
+			}
+			try {
+				new RegExp(regex, options);
+				return true;
+			}
+			catch(e) {
+				return false;
+			}
+		},
 	route2Regex : function(route)	{
 		var rArr = route.split('/');
 		for(var i = 0, L = rArr.length; i < L; i += 1)	{
@@ -54,8 +80,7 @@ var router = {
 		else	{
 			//not an exact match. Check to see if the route is a regex already.
 			var pattern = false;
-			if(thisRoute instanceof RegExp)	{
-				console.log(" -----> thisRoute IS an instanceof RegExp");
+			if(router.routes[thisRoute].isRegExp)	{
 				pattern = thisRoute;
 				}
 			//now check to see if the route includes any variables and, if so, convert them to a regex
@@ -75,41 +100,67 @@ var router = {
 				if(isMatch && isMatch[0] == hash)	{
 					r = thisRoute;
 					}
-				console.log("pattern: "+pattern, "    route: "+thisRoute, "    regex.test: "+regex.exec(hash));
+//				console.log("pattern: "+pattern, "    route: "+thisRoute, "    regex.test: "+regex.exec(hash));
 				}
 			else	{
-				console.log("no regex for route: "+thisRoute);
+//				console.log("no regex for route: "+thisRoute);
 				r = false;
 				}
 			}
 		return r;
 		},
+	getRoute : function(hash)	{
+		var route = null;
+		for(var index in router.routes)	{
+			if(route = router.testRoute(index,hash))	{break;}
+			}
+		return route;
+		},
+	executeHandler : function(route,hash)	{
+		if(route && hash)	{
+			if(router.routes[route])	{
+				
+				}
+			else	{
+				//hhhmm... got all this way and the route isn't valid? seems unlikely but must be handled.
+				}
+			}
+		else	{
+			// either route or hash not passed.
+			}
+		var hArr = hash.split('/'), vars = {};
+		},
 	handleHashChange : function()	{
 		//probably should check to make sure first three characters are #!/
-		var hash = location.hash.substr(3).replace(/\/$/, ""), hArr = hash.split('/'), vars = {}, route;
+		var hash = location.hash.substr(3).replace(/\/$/, ""), route;
 //		console.log(" -> hash: "+hash);
-		//some magic to get which route it is.
-		for(var i = 0,L = router.routes.length; i < L; i += 1)	{
+//if we return to routes being an array, this is how the loop goes.
+//		for(var i = 0,L = router.routes.length; i < L; i += 1)	{
 //			console.log(" -> route: ",router.getKeys(router.routes[i])[0]); 
-			if(route = router.testRoute(router.getKeys(router.routes[i])[0],hash))	{console.log("WOOOOOOOOOOOOOOOOOT"); break;}
+//			if(route = router.testRoute(router.getKeys(router.routes[i])[0],hash))	{console.log("WOOOOOOOOOOOOOOOOOT"); break;}
+//			}
+		route = router.getRoute(hash);
+		if(route)	{
+			console.log(" -> WOOT! valid route: "+route);
 			}
-		
-		
-		//for now... let's pretend.
-		route = "product/:pid/:seo", rArr = route.split('/');
-		for(var i = 0; i < rArr.length; i += 1)	{
+		else	{
+			console.log(" -> Uh Oh! no valid route found for "+hash);
+			//what to do here?
+			}
+/*		for(var i = 0; i < rArr.length; i += 1)	{
 			var r = rArr[i];
 			if(r.charAt(0) == ':')	{
 				vars[r.substring(1)] = hArr[i];
 				}
 			}
 //		console.log("Vars: ",vars);
-		}
+*/		}
 	};
 
+
+router.addRoute(/^(.*?)\/open$/,"product");
 router.addRoute("product/:pid/:seo","product");
 router.addRoute("product/:pid","product");
-//router.addRoute("/\product\/","product");
 router.addRoute("category/:path","category");
 router.addRoute("category/:path/:seo","category");
 router.addRoute("company","company");
@@ -140,6 +191,8 @@ window.addEventListener("hashchange", router.handleHashChange, false);
 <a href='#!/product/ABC/seo.html'>product link - ABC</a><br />
 <a href='#!/company/'>#!/company/</a><br />
 <a href='#!/company/about'>#!/company/about</a>
+<br />
+<a href='#!/tacos'>#!/tacos</a>
 
 </body>
 </html>
