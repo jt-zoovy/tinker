@@ -1,0 +1,77 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>Untitled Document</title>
+
+
+
+<script type='text/javascript'>
+
+
+var router = {
+	routes : [], //saved as array cuz sequence is important. matches on first hit.
+	handlers : {},
+	addRoute : function(route,name)	{
+		var obj = {};
+		obj[route] = name
+		this.routes.push(obj);
+		},
+	addHandler : function(name,callback)	{
+		this.handlers[name] == callback;
+		},
+	handleHashChange : function()	{
+		console.log(" -> hash: "+location.hash);
+		var h = location.hash, hArr = h.split('/'), vars = {}, route;
+		//some magic to get which route it is.
+		for(var i = 0,L = router.routes.length; i < L; i += 1)	{
+			if(router.routes[i] == h)	{
+				route = router.routes[i];
+				break;
+				}
+			console.log(" -> route: ",router.routes[i]); 
+			}
+		
+		
+		//for now... let's pretend.
+		route = "product/:pid/:seo", rArr = route.split('/');
+		for(var i = 0; i < rArr.length; i += 1)	{
+			var r = rArr[i];
+			if(r.charAt(0) == ':')	{
+				vars[r.substring(1)] = hArr[i];
+				}
+			}
+		console.log("Vars: ",vars);
+		}
+	};
+
+router.addRoute("product/:pid/:seo","product");
+router.addRoute("/\product\/","product");
+router.addRoute("category/:path","category");
+router.addRoute("company","company");
+router.addRoute("*","homepage"); //hhhhmmm... this a good or a bad idea. seems bad. maybe a / or * as the route. or a bang... for no hashBang present
+
+router.addHandler("product",function(vars){  //third param of extensions/dependencies array? Would allow us to not load extensions till they're needed. speeds up init.
+	console.log(' -> pid: '+pid);
+	});
+router.addHandler("category",showContent);
+router.addHandler("company","app.myRIA.a.showCompany");
+
+
+window.addEventListener("hashchange", router.handleHashChange, false);
+
+//console.dir(router.routes);
+</script>
+
+
+
+</head>
+
+<body>
+
+<a href='#!/product/XYZ/'>product link - XYZ</a><br />
+
+<a href='#!/product/ABC/'>product link - ABC</a>
+
+</body>
+</html>
