@@ -9,27 +9,85 @@
 <script type='text/javascript'>
 
 
+window.showContent = function(){}; //placeholder.
+
+
 var router = {
-	routes : [], //saved as array cuz sequence is important. matches on first hit.
-	handlers : {},
+	routes : [], //saved as array cuz sequence is important. hits on first match.
+	handlers : {}, //functions executed by route.
+	
+	//proper way to add a route to the routes table. will have validation.
 	addRoute : function(route,name)	{
 		var obj = {};
 		obj[route] = name
 		this.routes.push(obj);
 		},
+	//proper way to add a handler. will have validation.
 	addHandler : function(name,callback)	{
 		this.handlers[name] == callback;
 		},
+
+	route2Regex : function(route)	{
+		var rArr = route.split('/');
+		for(var i = 0, L = rArr.length; i < L; i += 1)	{
+			if(rArr[i].indexOf(':') >= 0)	{
+				rArr[i] = rArr[i].split(':')[0] || "";
+				rArr[i] += '()';
+				}
+			else	{
+				//no variables.
+				}
+			}
+		
+		return rArr.join('\/');
+		},
+	getKeys : function(obj)	{
+		return Object.keys(obj); // ### TODO -> Object.keys isn't backward compatible. update prototype or use jquery $map.
+//		return $.map: $.map(h, function(v,k) { return k; });
+		},
+	testRoute : function(thisRoute,hash)	{
+//		console.log("BEGIN testRoute","thisRoute: "+thisRoute);
+		var r = null; //what is returned.
+		//it's the simple things.... check for an exact match.
+		if(thisRoute == hash)	{
+			r = thisRoute;
+			}
+		else	{
+			//not an exact match. Check to see if the route is a regex already.
+			var pattern = false;
+			if(thisRoute instanceof RegExp)	{
+				console.log(" -----> thisRoute IS an instanceof RegExp");
+				pattern = thisRoute;
+				}
+			//now check to see if the route includes any variables and, if so, convert them to a regex
+			else if(thisRoute.indexOf(':') >= 0)	{
+				pattern = router.route2Regex(thisRoute);
+//				console.log(' -----> pattern: '+pattern);
+				}
+			else	{
+				//not a regex.  contains no vars. Exact match has already been eliminated. 
+				r = false;
+				}
+
+			if(pattern)	{
+				var regex = new RegExp(pattern);
+				console.log("pattern: "+pattern, "    route: "+thisRoute, "    regex.test: "+regex.test(thisRoute));
+				}
+			else	{
+				console.log("no regex for route: "+thisRoute);
+				r = false;
+				}
+			}
+		return r;
+		},
 	handleHashChange : function()	{
-		console.log(" -> hash: "+location.hash);
-		var h = location.hash, hArr = h.split('/'), vars = {}, route;
+		//probably should check to make sure first three characters are #!/
+		var hash = location.hash.substr(3).replace(/\/$/, ""), hArr = hash.split('/'), vars = {}, route;
+//		console.log(" -> hash: "+hash);
 		//some magic to get which route it is.
 		for(var i = 0,L = router.routes.length; i < L; i += 1)	{
-			if(router.routes[i] == h)	{
-				route = router.routes[i];
-				break;
-				}
-			console.log(" -> route: ",router.routes[i]); 
+//			console.log(" -> route: ",router.getKeys(router.routes[i])[0]); 
+			if(route = router.testRoute(router.getKeys(router.routes[i])[0],hash))	{console.log("WOOOOOOOOOOOOOOOOOT"); break;}
 			}
 		
 		
@@ -41,14 +99,19 @@ var router = {
 				vars[r.substring(1)] = hArr[i];
 				}
 			}
-		console.log("Vars: ",vars);
+//		console.log("Vars: ",vars);
 		}
 	};
 
 router.addRoute("product/:pid/:seo","product");
-router.addRoute("/\product\/","product");
+router.addRoute("product/:pid","product");
+//router.addRoute("/\product\/","product");
 router.addRoute("category/:path","category");
+router.addRoute("category/:path/:seo","category");
 router.addRoute("company","company");
+router.addRoute("company/:show","company");
+
+
 router.addRoute("*","homepage"); //hhhhmmm... this a good or a bad idea. seems bad. maybe a / or * as the route. or a bang... for no hashBang present
 
 router.addHandler("product",function(vars){  //third param of extensions/dependencies array? Would allow us to not load extensions till they're needed. speeds up init.
@@ -70,8 +133,9 @@ window.addEventListener("hashchange", router.handleHashChange, false);
 <body>
 
 <a href='#!/product/XYZ/'>product link - XYZ</a><br />
-
-<a href='#!/product/ABC/'>product link - ABC</a>
+<a href='#!/product/ABC/'>product link - ABC</a><br />
+<a href='#!/company/'>#!/company/</a><br />
+<a href='#!/company/about'>#!/company/about</a>
 
 </body>
 </html>
