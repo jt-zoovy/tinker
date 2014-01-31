@@ -9,40 +9,62 @@
 <script type='text/javascript'>
 
 
+var app = {
+	u : {
+		//turn a set of key value pairs (a=b&c=d) into an object. pass location.search.substring(1); for URI params or location.hash.substring(1) for hash based params
+		kvp2Array : function(s)	{
+			var r = false;
+			if(s && s.indexOf('=') > -1)	{
+				r = s?JSON.parse('{"' + s.replace(/&/g, '","').replace(/=/g,'":"') + '"}',function(key, value) { return key===""?value:decodeURIComponent(value) }):{};
+				}
+			else	{}
+			return r;
+			} //kvp2Array
+		}
+	}
+
+
+
 var router = {
-	inits : [], //get run once, at router init. allows for handling of URI vars et all.
-	routes : [], //an object, not an array. order is not required because route matches are implicit unless they define themselves otherwise.
+	initRoutes : [], //get run once, at router init. allows for handling of URI vars et all.
+	hashRoutes : [], //an object, not an array. order is not required because route matches are implicit unless they define themselves otherwise.
 	aliases : {}, //functions executed by route.
 	
 //proper way to add a route to the routes table. will have validation.
 	appendHash : function(arr)	{
-		return this._addHash('append',arr);
+		return this._addInitOrHash('hash','append',arr);
 		},
 	prependHash : function(arr)	{
-		return this._addHash('prepend',arr);
+		return this._addInitOrHash('hash','prepend',arr);
 		},
-	_addHash : function(mode,arr)	{
+
+	_addInitOrHash : function(mode,method,arr)	{
 		var r = false; //what is returned.
-		if((mode == 'append' || mode == 'prepend') && arr[0] && arr[1] && arr[2])	{
-			if(router.matchFunctions[arr[0]])	{
-				var obj = {'type' : arr[0], 'route' : arr[1], 'callback' : arr[2], 'p' : arr[3]};
-				mode == 'prepend' ? this.routes.unshift(obj) : this.routes.push(obj);
-				r = true;
+		if((method == 'append' || method == 'prepend') && (mode == 'init' || mode == 'hash'))	{
+			if(arr[0] && arr[2])	{ //route isn't validated against because a blank route is a valid route (homepage)
+				if(router.matchFunctions[arr[0]])	{
+					var obj = {'type' : arr[0], 'route' : arr[1], 'callback' : arr[2], 'p' : arr[3]};
+					method == 'prepend' ? this[mode+'Routes'].unshift(obj) : this[mode+'Routes'].push(obj);
+					r = true;
+					}
+				else	{
+					console.warn("In _addInitOrHash, for route "+arr[1]+" type was set as "+arr[0]+" which is not valid");
+					}				
 				}
 			else	{
-				console.warn("In _addHash, for route "+arr[1]+" type was set as "+arr[0]+" which is not valid");
+				console.warn("In _addInitOrHash, type ["+arr[0]+"] or route ["+arr[1]+"] or callback [typeof: "+(typeof arr[2])+"] was not defined and all are required.");
 				}
 			}
-		else if((mode == 'append' || !mode == 'prepend'))	{
-			console.warn("In _addHash, type ["+arr[0]+"] or route ["+arr[1]+"] or callback [typeof: "+(typeof arr[2])+"] was not defined and all are required.");
-			}
 		else	{
-			console.warn("In _addHash, mode not specified or not valid. mode: "+mode);
+			console.warn("In _addInitOrHash, method ["+method+"] and or mode ["+mode+"] either not specified or not valid.");
 			}
 		return r;
 		},
 		
-	//proper way to add a handler. will have validation.
+	appendInit : function(arr)	{return this._addInitOrHash('init','append',arr);},
+	prependInit : function(arr)	{return this._addInitOrHash('init','prepend',arr);},
+		
+	//proper way to add an alias. will have validation.
 	addAlias : function(name,callback)	{
 		if(name && callback)	{
 			router.aliases[name] = callback;
@@ -55,6 +77,9 @@ var router = {
 	_buildMatchParams : function(route,hash,keysArr)	{
 		var regex = new RegExp(/{{(.*?)}}/g); //### TODO -> this regex needs love. only doing first match.
 		var matchVarsArr = regex.exec(route), vars = {};
+		
+		console.log(" -> matchVarsArr: "); console.dir(matchVarsArr);
+		
 		if(matchVarsArr && matchVarsArr.length)	{
 			for(var i = 0, L = matchVarsArr.length; i < L; i += 1)	{
 				vars[matchVarsArr[i]] = keysArr[i];
@@ -117,8 +142,8 @@ var router = {
 //	-> may at some point enable stacking, but it'll be off by default.
 	_getRouteObj : function(hash)	{
 		var route = null;
-		for(var i = 0,L = router.routes.length; i < L; i += 1)	{
-			var isMatchArr = router._doesThisRouteMatchHash(router.routes[i],hash); //will return an array where 0 is the 'match' from the regex and subsequent entries are the matched values. (ex: for product/PID , spot 1 is PID)
+		for(var i = 0,L = router.hashRoutes.length; i < L; i += 1)	{
+			var isMatchArr = router._doesThisRouteMatchHash(router.hashRoutes[i],hash); //will return an array where 0 is the 'match' from the regex and subsequent entries are the matched values. (ex: for product/PID , spot 1 is PID)
 			if(isMatchArr)	{
 				route = isMatchArr;
 				break;
@@ -126,7 +151,7 @@ var router = {
 			}
 		return route;
 		},
-	_executeHandler : function(routeObj)	{
+	_executeCallback : function(routeObj)	{
 		//if the callback is a string, then it should correspond to a handler.
 		if(typeof routeObj.callback === 'string')	{
 			console.log(" -> callback is a string: "+routeObj.callback)
@@ -135,7 +160,7 @@ var router = {
 				}
 			else	{
 				//no matching handler found.
-				console.warn("In _executeHandler, handler ["+routeObj.callback+"] specified does not exist.");
+				console.warn("In _executeCallback, handler ["+routeObj.callback+"] specified does not exist.");
 				}
 			}
 		else if(typeof routeObj.callback === 'function')	{
@@ -148,7 +173,15 @@ var router = {
 		},
 
 	init : function()	{
-//		console.log("INIT executed");
+		console.log("INIT executed");
+		
+		vars = {
+			location : document.location,
+			hash : location.hash,
+			uriParams : {},
+			hashParams : {}
+			}
+		
 //this would get added at end of INIT. that way, init can modify the hash as needed w/out impacting.
 		window.addEventListener("hashchange", router.handleHashChange, false);
 		},
@@ -159,7 +192,7 @@ var router = {
 			if(routeObj)	{
 				routeObj.hash = location.hash;
 				console.log(" -> WOOT! valid route!"); // console.dir(routeObj);
-				router._executeHandler(routeObj);
+				router._executeCallback(routeObj);
 				}
 			else	{
 				console.log(" -> Uh Oh! no valid route found for "+location.hash);
@@ -174,6 +207,7 @@ var router = {
 	};
 
 
+//hashes are checked with each hash change.  They can be added at any time, before or after the router.init function is run.
 router.appendHash(['regexp',/^(.*?)\/open$/,"product",['a','b','c']]); //a/b/c get mapped to the return values of the regular expression and are passed into 'product' as an object.
 router.appendHash(['exact',"company","company"]);
 router.appendHash(['match',"product/{{pid}}/{{seo}}",function(v){console.log("EXECUTED a function passed as callback."); console.dir(v)}]);
@@ -182,25 +216,29 @@ router.appendHash(['match',"category/{{path}}","category"]);
 router.appendHash(['match',"category/{{path}}/{{seo}}","category"]);
 router.appendHash(['function',function(v){},"product"]); //function would return false if not true. anything passed gets returned and it gets treated as true and passed into product
 router.appendHash(['match',"company/{{show}}","company"]);
+
+// #### TODO -> these two need work.
 router.appendHash(['exact',"404","company"]);
-router.appendHash(["exact","homepage","default"]); //hhhhmmm... this a good or a bad idea. seems bad. maybe a / or * as the route. or a bang... for no hashBang present
+router.appendHash(["exact","",function(){console.log("go to homepage");}]); //hhhhmmm... this a good or a bad idea. seems bad. maybe a / or * as the route. or a bang... for no hashBang present
+
+router.appendInit(['function',function(v){},function(v){}]);
 
 
 
 router.addAlias("default",function(vars){  //third param of extensions/dependencies array? Would allow us to not load extensions till they're needed. speeds up init.
-	console.log(' -> default handler');
+	console.log(' -> default alias');
 	});
 
 
 router.addAlias("product",function(vars){  //third param of extensions/dependencies array? Would allow us to not load extensions till they're needed. speeds up init.
-	console.log(' -> product handler');
+	console.log(' -> product alias');
 	});
 
 router.addAlias("category",function(){
-	console.log('category handler executed');
+	console.log('category alias executed');
 	});
 router.addAlias("company",function(){
-	console.log('company handler executed');
+	console.log('company alias executed');
 	});
 
 
@@ -221,20 +259,13 @@ router.addAlias("company",function(){
 <a href='#!product/ABC/seo.html'>product link - ABC</a><br />
 <a href='#!company'>#!company</a><br />
 <a href='#!/company'>#!/company</a><br />
+<a href='#!'>#!</a><br />
 <a href='#!company/about'>#!/company/about</a><br />
 <a href='#tacos'>#/tacos</a><br />
 <a href='#!burritos'>#!/burritos</a><br />
 
 <pre>
-allow the addRoute name to be a function OR a string (string points to a handler)
- for adding to the beginning of the routes.
 
-router.hash.append (old router.addRoute)
-router.hash.prepend //run on hash change.  (router.prepend)
-router.init.append
-router.init.prepend //run only at init.
-
-process in order.
 the init functions needs to get URI vars and hash vars passed in.
 
 support for an 'addRouteType'? 
