@@ -5,194 +5,242 @@
 <title>Untitled Document</title>
 
 
-
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
 <script type='text/javascript'>
 
 
-window.showContent = function(){}; //placeholder.
-
-
 var router = {
-	routes : {}, //an object, not an array. order is not required because route matches are implicit unless they define themselves otherwise.
-	handlers : {}, //functions executed by route.
+	inits : [], //get run once, at router init. allows for handling of URI vars et all.
+	routes : [], //an object, not an array. order is not required because route matches are implicit unless they define themselves otherwise.
+	aliases : {}, //functions executed by route.
 	
-	//proper way to add a route to the routes table. will have validation.
-	addRoute : function(route,name)	{
-		if(route && name)	{
-			if(this.routes[route])	{
-				console.warn("route: "+route+" was just overwritten");
+//proper way to add a route to the routes table. will have validation.
+	appendHash : function(arr)	{
+		return this._addHash('append',arr);
+		},
+	prependHash : function(arr)	{
+		return this._addHash('prepend',arr);
+		},
+	_addHash : function(mode,arr)	{
+		var r = false; //what is returned.
+		if((mode == 'append' || mode == 'prepend') && arr[0] && arr[1] && arr[2])	{
+			if(router.matchFunctions[arr[0]])	{
+				var obj = {'type' : arr[0], 'route' : arr[1], 'callback' : arr[2], 'p' : arr[3]};
+				mode == 'prepend' ? this.routes.unshift(obj) : this.routes.push(obj);
+				r = true;
 				}
-			this.routes[route] = {'name' : name, 'isRegExp' : route instanceof RegExp};
+			else	{
+				console.warn("In _addHash, for route "+arr[1]+" type was set as "+arr[0]+" which is not valid");
+				}
+			}
+		else if((mode == 'append' || !mode == 'prepend'))	{
+			console.warn("In _addHash, type ["+arr[0]+"] or route ["+arr[1]+"] or callback [typeof: "+(typeof arr[2])+"] was not defined and all are required.");
 			}
 		else	{
-			// either route or name not specified. throw error.
+			console.warn("In _addHash, mode not specified or not valid. mode: "+mode);
 			}
+		return r;
 		},
+		
 	//proper way to add a handler. will have validation.
-	addHandler : function(name,callback)	{
+	addAlias : function(name,callback)	{
 		if(name && callback)	{
-			this.handlers[name] == callback;
+			router.aliases[name] = callback;
 			}
 		else	{
 			// eithr name or callback not specified.  ### TODO -> add error.
 			}
 		},
-	thisIsAValidRegExp : function(pattern)	{
-		var parts = pattern.split('/'),
-				regex = pattern,
-				options = "";
-			if (parts.length > 1) {
-				regex = parts[1];
-				options = parts[2];
-			}
-			try {
-				new RegExp(regex, options);
-				return true;
-			}
-			catch(e) {
-				return false;
-			}
-		},
-	route2Regex : function(route)	{
-		var rArr = route.split('/');
-		for(var i = 0, L = rArr.length; i < L; i += 1)	{
-			if(rArr[i].indexOf(':') >= 0)	{
-				rArr[i] = rArr[i].split(':')[0] || "";
-				rArr[i] +=  '([^\\/]+)';
-				}
-			else	{
-				//no variables.
+		
+	_buildMatchParams : function(route,hash,keysArr)	{
+		var regex = new RegExp(/{{(.*?)}}/g); //### TODO -> this regex needs love. only doing first match.
+		var matchVarsArr = regex.exec(route), vars = {};
+		if(matchVarsArr && matchVarsArr.length)	{
+			for(var i = 0, L = matchVarsArr.length; i < L; i += 1)	{
+				vars[matchVarsArr[i]] = keysArr[i];
 				}
 			}
-		return rArr.join('\/');
+		return vars;
 		},
-	getKeys : function(obj)	{
-		return Object.keys(obj); // ### TODO -> Object.keys isn't backward compatible. update prototype or use jquery $map.
-//		return $.map: $.map(h, function(v,k) { return k; });
+//The route type functions all get passed the same vars, routeObj and hash.
+//the function should return false is the hash does not match the route.
+//the function should return an object if a match is 
+	matchFunctions : {
+		'exact' : function(routeObj,hash){
+			var r = false;
+			if(routeObj.route == hash)	{
+				r = {'exact':hash};
+				}
+			return r;
+			},
+		'match' : function(routeObj,hash){
+			var pattern = routeObj.route.replace(/{{(.*?)}}/g,'([^\\/]+)'), r = false, regex = new RegExp(pattern), isMatch = regex.exec(hash);
+//regex.exec[0] will be the match value. so comparing that to the hash will ensure no substring matches get thru.
+//substring matches can be accomplished w/ a regex in the route.
+			if(isMatch && isMatch[0] == hash)	{
+				r = {'match' : isMatch, 'params' : router._buildMatchParams(routeObj.route,hash,isMatch)};
+				}
+			return r;
+			},
+		'function' : function(routeObj,hash){
+			// ### TODO -> need to write this.
+			return routeObj.route(routeObj,hash);
+			},
+		'regexp' : function(routeObj,hash){
+			var regex = new RegExp(routeObj.route), r = false, isMatch = regex.exec(hash);
+			if(isMatch)	{
+				// ### TODO -> needs to run the _buildMatchParams util.
+				r = {'regexp' : isMatch};
+				}
+			return r;
+			}
 		},
-	testRoute : function(thisRoute,hash)	{
-//		console.log("BEGIN testRoute","thisRoute: "+thisRoute);
-		var r = null; //what is returned.
-		//it's the simple things.... check for an exact match.
-		if(thisRoute == hash)	{
-			r = thisRoute;
+//compares an individual route in the routes array against the hash to check for a match.
+//The matchFunction response and the routeObj are copied and returned.
+	_doesThisRouteMatchHash : function(routeObj,hash)	{
+		var r = null;
+		if(routeObj.type && typeof router.matchFunctions[routeObj.type] == 'function')	{
+			r = router.matchFunctions[routeObj.type](routeObj,hash);
+			if(r)	{
+				r = $.extend({},routeObj,r); //r last trumps whatever was in the routeObj. allows r to 'change' things.
+				}
 			}
 		else	{
-			//not an exact match. Check to see if the route is a regex already.
-			var pattern = false;
-			if(router.routes[thisRoute].isRegExp)	{
-				pattern = thisRoute;
-				}
-			//now check to see if the route includes any variables and, if so, convert them to a regex
-			else if(thisRoute.indexOf(':') >= 0)	{
-				pattern = router.route2Regex(thisRoute);
-//				console.log(' -----> pattern: '+pattern);
-				}
-			else	{
-				//not a regex.  contains no vars. Exact match has already been eliminated. 
-				r = false;
-				}
-
-			if(pattern)	{
-				var regex = new RegExp(pattern), isMatch = regex.exec(hash);
-				//regex.exec[0] will be the match value. so comparing that to the hash will ensure no substring matches get thru.
-				//substring matches can be accomplished w/ a regex in the route.
-				if(isMatch && isMatch[0] == hash)	{
-					r = thisRoute;
-					}
-//				console.log("pattern: "+pattern, "    route: "+thisRoute, "    regex.test: "+regex.exec(hash));
-				}
-			else	{
-//				console.log("no regex for route: "+thisRoute);
-				r = false;
-				}
+			console.warn("for route "+routeObj.route+", routeObj.type is not set ["+routeObj.type+"] OR typeof is not a function ["+(typeof router.matchFunctions[routeObj.type])+"].");
+			console.dir(routeObj);
 			}
 		return r;
 		},
-	getRoute : function(hash)	{
+//Goes through the entire list of routes, in order.
+//executes the match method (exact, function, regexp, etc) to see if hash is a match.
+//once a match is found, processing is stopped, which means only 1 match per hash. 
+//	-> may at some point enable stacking, but it'll be off by default.
+	_getRouteObj : function(hash)	{
 		var route = null;
-		for(var index in router.routes)	{
-			if(route = router.testRoute(index,hash))	{break;}
+		for(var i = 0,L = router.routes.length; i < L; i += 1)	{
+			var isMatchArr = router._doesThisRouteMatchHash(router.routes[i],hash); //will return an array where 0 is the 'match' from the regex and subsequent entries are the matched values. (ex: for product/PID , spot 1 is PID)
+			if(isMatchArr)	{
+				route = isMatchArr;
+				break;
+				}
 			}
 		return route;
 		},
-	executeHandler : function(route,hash)	{
-		if(route && hash)	{
-			if(router.routes[route])	{
-				
+	_executeHandler : function(routeObj)	{
+		//if the callback is a string, then it should correspond to a handler.
+		if(typeof routeObj.callback === 'string')	{
+			console.log(" -> callback is a string: "+routeObj.callback)
+			if(router.aliases[routeObj.callback])	{
+				router.aliases[routeObj.callback](routeObj);
 				}
 			else	{
-				//hhhmm... got all this way and the route isn't valid? seems unlikely but must be handled.
+				//no matching handler found.
+				console.warn("In _executeHandler, handler ["+routeObj.callback+"] specified does not exist.");
 				}
 			}
-		else	{
-			// either route or hash not passed.
+		else if(typeof routeObj.callback === 'function')	{
+			routeObj.callback(routeObj);
 			}
-		var hArr = hash.split('/'), vars = {};
+		else	{
+			console.error("In _execute handler, invalid type for routeObj.callback. typeof: "+(typeof routeObj.callback));
+			//unrecognized type for calback.
+			}
 		},
+
+	init : function()	{
+//		console.log("INIT executed");
+//this would get added at end of INIT. that way, init can modify the hash as needed w/out impacting.
+		window.addEventListener("hashchange", router.handleHashChange, false);
+		},
+
 	handleHashChange : function()	{
-		//probably should check to make sure first three characters are #!/
-		var hash = location.hash.substr(3).replace(/\/$/, ""), route;
-//		console.log(" -> hash: "+hash);
-//if we return to routes being an array, this is how the loop goes.
-//		for(var i = 0,L = router.routes.length; i < L; i += 1)	{
-//			console.log(" -> route: ",router.getKeys(router.routes[i])[0]); 
-//			if(route = router.testRoute(router.getKeys(router.routes[i])[0],hash))	{console.log("WOOOOOOOOOOOOOOOOOT"); break;}
-//			}
-		route = router.getRoute(hash);
-		if(route)	{
-			console.log(" -> WOOT! valid route: "+route);
-			}
-		else	{
-			console.log(" -> Uh Oh! no valid route found for "+hash);
-			//what to do here?
-			}
-/*		for(var i = 0; i < rArr.length; i += 1)	{
-			var r = rArr[i];
-			if(r.charAt(0) == ':')	{
-				vars[r.substring(1)] = hArr[i];
+		if(location.hash.indexOf('#!') == 0)	{
+			var routeObj = router._getRouteObj(location.hash.substr(2).replace(/\/$/, ""));
+			if(routeObj)	{
+				routeObj.hash = location.hash;
+				console.log(" -> WOOT! valid route!"); // console.dir(routeObj);
+				router._executeHandler(routeObj);
+				}
+			else	{
+				console.log(" -> Uh Oh! no valid route found for "+location.hash);
+				//what to do here?
 				}
 			}
-//		console.log("Vars: ",vars);
-*/		}
+		else	{
+			console.log(" -> not a hashbang");
+			//is not a hashbang. do nothing.
+			}
+		}
 	};
 
 
-router.addRoute(/^(.*?)\/open$/,"product");
-router.addRoute("product/:pid/:seo","product");
-router.addRoute("product/:pid","product");
-router.addRoute("category/:path","category");
-router.addRoute("category/:path/:seo","category");
-router.addRoute("company","company");
-router.addRoute("company/:show","company");
+router.appendHash(['regexp',/^(.*?)\/open$/,"product",['a','b','c']]); //a/b/c get mapped to the return values of the regular expression and are passed into 'product' as an object.
+router.appendHash(['exact',"company","company"]);
+router.appendHash(['match',"product/{{pid}}/{{seo}}",function(v){console.log("EXECUTED a function passed as callback."); console.dir(v)}]);
+router.appendHash(['match',"product/{{pid}}","product"]);
+router.appendHash(['match',"category/{{path}}","category"]);
+router.appendHash(['match',"category/{{path}}/{{seo}}","category"]);
+router.appendHash(['function',function(v){},"product"]); //function would return false if not true. anything passed gets returned and it gets treated as true and passed into product
+router.appendHash(['match',"company/{{show}}","company"]);
+router.appendHash(['exact',"404","company"]);
+router.appendHash(["exact","homepage","default"]); //hhhhmmm... this a good or a bad idea. seems bad. maybe a / or * as the route. or a bang... for no hashBang present
 
 
-router.addRoute("*","homepage"); //hhhhmmm... this a good or a bad idea. seems bad. maybe a / or * as the route. or a bang... for no hashBang present
 
-router.addHandler("product",function(vars){  //third param of extensions/dependencies array? Would allow us to not load extensions till they're needed. speeds up init.
-	console.log(' -> pid: '+pid);
+router.addAlias("default",function(vars){  //third param of extensions/dependencies array? Would allow us to not load extensions till they're needed. speeds up init.
+	console.log(' -> default handler');
 	});
-router.addHandler("category",showContent);
-router.addHandler("company","app.myRIA.a.showCompany");
 
 
-window.addEventListener("hashchange", router.handleHashChange, false);
+router.addAlias("product",function(vars){  //third param of extensions/dependencies array? Would allow us to not load extensions till they're needed. speeds up init.
+	console.log(' -> product handler');
+	});
+
+router.addAlias("category",function(){
+	console.log('category handler executed');
+	});
+router.addAlias("company",function(){
+	console.log('company handler executed');
+	});
+
 
 //console.dir(router.routes);
+
+
+
+
 </script>
 
 
 
 </head>
 
-<body>
+<body onload="router.init();">
 
-<a href='#!/product/XYZ/'>product link - XYZ</a><br />
-<a href='#!/product/ABC/seo.html'>product link - ABC</a><br />
-<a href='#!/company/'>#!/company/</a><br />
-<a href='#!/company/about'>#!/company/about</a>
-<br />
-<a href='#!/tacos'>#!/tacos</a>
+<a href='#!product/XYZ/'>product link - XYZ</a><br />
+<a href='#!product/ABC/seo.html'>product link - ABC</a><br />
+<a href='#!company'>#!company</a><br />
+<a href='#!/company'>#!/company</a><br />
+<a href='#!company/about'>#!/company/about</a><br />
+<a href='#tacos'>#/tacos</a><br />
+<a href='#!burritos'>#!/burritos</a><br />
+
+<pre>
+allow the addRoute name to be a function OR a string (string points to a handler)
+ for adding to the beginning of the routes.
+
+router.hash.append (old router.addRoute)
+router.hash.prepend //run on hash change.  (router.prepend)
+router.init.append
+router.init.prepend //run only at init.
+
+process in order.
+the init functions needs to get URI vars and hash vars passed in.
+
+support for an 'addRouteType'? 
+ -> if so, each route 'match' validation would need to be appropriately named in an object instead of crammed into doesThisRouteMatchHash
+ -> 'match' could turn the route into a regex, then run the regexp 'match' function.
+</pre>
 
 </body>
 </html>
