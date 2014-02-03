@@ -1,0 +1,6 @@
+start = ((op:binop ";"*) { return op })+
+binop = left:[a-zA-z0-9]+ op:[ ]*[:][ ]* right:[a-zA-z0-9()/:]+  {
+	var obj = {}
+	obj[left.join("")] = right.join("");
+	return obj;
+	}
