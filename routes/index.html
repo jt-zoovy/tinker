@@ -44,7 +44,7 @@ var router = {
 		if((method == 'append' || method == 'prepend') && (mode == 'init' || mode == 'hash'))	{
 			if(arr[0] && arr[2])	{ //route isn't validated against because a blank route is a valid route (homepage)
 				if(router.matchFunctions[arr[0]])	{
-					var obj = {'type' : arr[0], 'route' : arr[1], 'callback' : arr[2], 'p' : arr[3]};
+					var obj = {'type' : arr[0], 'route' : arr[1], 'callback' : arr[2]}; //not supported just yet, but may be necessary for naming params returned by regexp type: , 'p' : arr[3]
 					method == 'prepend' ? this[mode+'Routes'].unshift(obj) : this[mode+'Routes'].push(obj);
 					r = true;
 					}
@@ -234,7 +234,7 @@ var router = {
 //hashes are checked with each hash change.  They can be added at any time, before or after the router.init function is run.
 router.appendHash(['regexp',/^(.*?)\/open$/,function(f){
 	console.log(" -> hit on the regex!!!!!!"); console.dir(f);
-	},['a','b','c']]); //a/b/c get mapped to the return values of the regular expression and are passed into 'product' as an object.
+	}]); //a/b/c get mapped to the return values of the regular expression and are passed into 'product' as an object.
 router.appendHash(['exact',"company","company"]);
 router.appendHash(['match',"product/{{pid}}/{{seo}}",function(v){console.log("EXECUTED a function passed as callback."); console.dir(v)}]);
 router.appendHash(['match',"product/{{pid}}","product"]);
