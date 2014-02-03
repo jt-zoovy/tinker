@@ -4,28 +4,58 @@
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <title>Peggy</title>
 
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
 <script type="text/javascript" src="peg-0.8.0.js"></script>
+
+
 <script type='text/javascript'>
 
-//http://pegjs.majda.cz/documentation#generating-a-parser-command-line
+function makeTemplate()	{
+	window.$template = $("#someTemplate");
+	}
 
-var rules = [];
-rules.push("start = ('a' / 'b' / 'd')+");
+function getRules(rulesURL)	{
+	console.log(' -> fetching rules: '+rulesURL);
+	var rulesReq = $.ajax({
+		url : rulesURL,
+		dataType : 'text',
+		success : function(data)	{
+			console.log("Successfully fetched "+rulesURL);
+			window.parser = PEG.buildParser(data);
+			console.log("Parser built");
+			translateTemplate();
+			}
+		});
+	}
 
-rules.push('integer "integer"');
-rules.push("= digits:[0-9]+ { return makeInteger(digits); }");
-rules.push('renderFormat "renderFormat"');
-rules.push("= string:[a-zA-Z0-9]+ { return makeInteger(digits); }");
+function translateTemplate()	{
+	console.log(' -> running translateTemplate');
+	var addressData = {
+		"ship/address1" : "123 evergreen terrace",
+		"ship/postal" : "92127"
+		}
+	$("[data-bind]",$template).each(function(){
+		var DB = $(this).data('bind');
+		console.log(" -> DB: "+DB);
+		parser.parse(DB);
+		});
+	}
 
-
-var parser = PEG.buildParser(rules.join("\n"));
-
-console.log(parser.parse("abba"));
-console.log(parser.parse("abd"));
+//console.log(parser.parse("hello"));
+//console.log(parser.parse("abd"));
 </script>
 </head>
-<body>
+<body onload="makeTemplate(); getRules('rules.txt');">
 
+<div id='someTemplate'>
+	<div data-bind="var:address(ship/address1);format:text;"  title='address'></div>
+	<div data-bind="var:address(ship/address2);format:text;"  title='address 2'></div>
+
+	<span data-bind="var:address(ship/city);format:text;"  title='city'></span>
+	<span data-bind="var:address(ship/region);format:text;"  title='state'></span>
+	<span data-bind="var:address(ship/postal);format:text;"  title='zip'></span>
+	<div data-bind="var:address(ship/countrycode);format:text;" title='country'></div>
+</div>
 
 
 </body>
