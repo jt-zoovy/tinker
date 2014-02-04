@@ -1417,6 +1417,11 @@ css : type, pass, path, id (id should be unique per css - allows for not loading
 					$('#globalMessaging').anymessage({"message":"In _app.u.handleButtons, $target was empty or not a valid jquery instance. ","gMessage":true});
 					}
 				},
+//at one point, this was a plugin, but w/ the introduction of multiple app instantiations, that changed.
+//What was the plugin was split into two pieces, the app-event based delegation is here.  The form based is in anyForm
+			handleDelegation : function($target)	{
+
+				},
 
 //a UI Action should have a databind of data-app-event (this replaces data-btn-action).
 //value of action should be EXT|buttonObjectActionName.  ex:  admin_orders|orderListFiltersUpdate

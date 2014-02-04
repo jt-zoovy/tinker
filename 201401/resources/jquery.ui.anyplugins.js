@@ -425,7 +425,7 @@ In both cases, keep watching for further changes.
 //clear the message entirely. run after a close. removes element from DOM.
 		destroy : function(){
 			//remove all the delegated events!!! leave the content alone.
-			this.element.off('change.trackform').off('keyup.trackform')
+			this.element.off('change.trackform').off('keyup.trackform');
 			var supportedEvents = new Array("click","change","focus","blur","submit","keyup");
 			for(var i = 0; i < supportedEvents.length; i += 1)	{
 				this.element.off(supportedEvents[i]+".app");
