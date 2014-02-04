@@ -14,49 +14,292 @@ function makeTemplate()	{
 	window.$template = $("#someTemplate");
 	}
 
+
+function getRulesFromTextarea()	{
+	var success = false;
+	try{
+		var parserSource = PEG.buildParser($('#grammar').val());
+		parser = eval(parserSource);
+		console.log(parser);
+		success = true;
+		}
+	catch(e)	{
+		console.warn("Could not build parser.");
+		console.error(buildErrorMessage(e));
+		}
+	
+	if(success)	{
+		console.log(" -> successfully built parser");
+		translateTemplate();
+		}
+	}
+/*
 function getRules(rulesURL)	{
 	console.log(' -> fetching rules: '+rulesURL);
 	var rulesReq = $.ajax({
 		url : rulesURL,
 		dataType : 'text',
+		error : function(a,b,c)	{
+			console.warn("Got to the AJAX 'error'");
+			console.log(a,b,c);
+			},
+		complete : function(a,b,c)	{
+			console.log("Got to the AJAX 'complete'");
+//			console.log(a,b,c);
+			},
 		success : function(data)	{
 			console.log("Successfully fetched "+rulesURL);
-			window.parser = PEG.buildParser(data);
-			console.log("Parser built");
-			translateTemplate();
+			$('#grammar').val(data);
+//			console.debug(data);
+			var success = false;
+			try{
+				var parserSource = PEG.buildParser($('#grammar').val());
+				parser = eval(parserSource);
+				success = true;
+				}
+			catch(e)	{
+				console.warn("Could not build parser.");
+				console.log(buildErrorMessage(e));
+				}
+			
+			if(success)	{
+				console.log(" -> successfully built parser");
+				translateTemplate();
+				}
 			}
 		});
+	}
+*/
+function buildErrorMessage(e) {
+	return e.line !== undefined && e.column !== undefined ? "Line " + e.line + ", column " + e.column + ": " + e.message : e.message;
 	}
 
 function translateTemplate()	{
 	console.log(' -> running translateTemplate');
 	var addressData = {
-		"ship/address1" : "123 evergreen terrace",
-		"ship/postal" : "92127"
+		"$shipAddress" : "123 evergreen terrace",
+		"$shipPostal" : "92127"
 		}
 	$("[data-bind]",$template).each(function(){
 		var DB = $(this).data('bind');
-		console.log(" -> DB: "+DB);
+		console.log(" -> DB: ["+DB+"]");
 		parser.parse(DB);
 		});
 	}
-
+var parser; //declared globally. this will be part of _app...
 //console.log(parser.parse("hello"));
 //console.log(parser.parse("abd"));
 </script>
 </head>
-<body onload="makeTemplate(); getRules('rules.txt');">
+<body onload="makeTemplate(); getRulesFromTextarea('new_db_rules.pegjs');">
 
 <div id='someTemplate'>
-	<div data-bind="var:address(ship/address1);format:text;"  title='address'></div>
-	<div data-bind="var:address(ship/address2);format:text;"  title='address 2'></div>
-
-	<span data-bind="var:address(ship/city);format:text;"  title='city'></span>
-	<span data-bind="var:address(ship/region);format:text;"  title='state'></span>
-	<span data-bind="var:address(ship/postal);format:text;"  title='zip'></span>
-	<div data-bind="var:address(ship/countrycode);format:text;" title='country'></div>
+	<div data-bind="text ($color) --xyz='scalar' --abc true $variable #b00be5; command2; text ($shipAddress);"  title='address'></div>
 </div>
 
+<!--
+	<div data-bind="text(shipaddress2);"  title='address 2'></div>
+
+	<span data-bind="text(shipcity);"  title='city'></span>
+	<span data-bind="text(shipregion);"  title='state'></span>
+	<span data-bind="text(shippostal);"  title='zip'></span>
+	<div data-bind="text(shipcountrycode);" title='country'></div>
+-->
+
+<textarea id='grammar' rows='20' cols='50'>
+start
+ = call+
+
+call
+ = command:(block_command / command) _ lb* { return command }
+
+command
+ = _ cmd:[A-Za-z0-9?]+ args:((ws+ value)+)? _ lb+ {
+     return {
+       type: "command",
+       name: cmd.join("").toLowerCase(),
+       args: args ? args.map(function(a) { return a[1] }) : null
+     }
+   }
+
+// reserved for future looping/code nesting/lexical scope
+// not currently functional!
+block
+ = "{" lb* e:(block_command / command)+ lb* _ "}" { return e }
+
+block_command
+ = e:command _ b:block lb* {
+     e.block = b;
+     return e;
+}
+
+// longopt start with a --
+longopt
+ = ( longOptWithValue )
+ / ( longOptSolo )
+
+// --abc
+longOptSolo 
+ = "--" k:([a-zA-Z]+) {
+     return{ type:"longopt", key: k.join(""), value:null }
+     }
+
+// --abc=$var --abc='var' --abc=#b00be5; 
+longOptWithValue
+ = "--" k:([a-zA-Z]+) "=" v:( value )  {
+    return {
+       type: "longopt",
+       key: k.join(""),
+       value: v
+       }
+    }
+
+// scalar (string)
+// NOTE: at this point there is no way to escape a ' in a string.
+// 
+scalar
+ = "'" v:([^']*) "'" {
+     return { 
+       type: "scalar",
+       value: v.join("")
+     } 
+   }
+
+// Variables can't start with a number
+variable
+ = "$" v:([a-zA-Z0-9_]*) { 
+     return { 
+       type: "variable",
+       value: v.join("")
+     } 
+   }
+
+integer
+  = digits:[0-9]+ { 
+      return { 
+        type: "integer", 
+        value: parseInt(digits.join(""), 10) 
+      }
+    }
+
+hexcolor 
+  = "#" v:([A-Fa-f0-9][A-Fa-f0-9][A-Fa-f0-9][A-Fa-f0-9][A-Fa-f0-9][A-Fa-f0-9]) {
+     return { type:"hexcolor", value: v.join("")  }
+     }
+
+//
+// right now this returns an additive command ex:
+// { type:"math", sign: "+", args:[1,2] 
+// it probably makes more sense to do the math and return 
+//  this as an integer of course since I don't have a variable lookup
+//  right now i can't really test this .. but this is fun:
+//  ($a+10+50+70) 
+// the current result is a little wonky... but loveable. 
+//
+additive
+  = left:muldiv _ sign:[+-] _ right:additive { 
+      return { 
+        type: "math", 
+        name:sign, 
+        args:[left,right] 
+      }
+    }
+  / muldiv
+
+muldiv
+  = left:primary _ sign:[*/] _ right:muldiv {
+      return { 
+        type: "math", 
+        name: sign, 
+        args:[left, right] 
+      }
+    }
+  / primary
+
+IdentifierStart
+  = "$"
+  / "_"
+
+IdentifierPart
+  = IdentifierStart
+
+ReservedWord
+  = FutureReservedWord
+  / NullLiteral
+  / BooleanLiteral
+
+FutureReservedWord
+  = (
+      "as"
+      /  "break"
+      / "begin"
+      / "case"
+      / "catch"
+      / "continue"
+      / "debugger"
+      / "default"
+      / "delete"
+      / "do"
+      / "else"
+      / "elsif"
+      / "end"
+      / "finally"
+      / "for"
+      / "function"
+      / "if"
+      / "instanceof"
+      / "in"
+      / "new"
+      / "return"
+      / "switch"
+      / "this"
+      / "throw"
+      / "try"
+      / "typeof"
+      / "var"
+      / "void"
+      / "while"
+      / "wend"
+      / "with"
+    )
+    !IdentifierPart
+
+NullToken       = "null"             !IdentifierPart
+TrueToken       = "true"             !IdentifierPart
+FalseToken      = "false"            !IdentifierPart
+
+NullLiteral
+  = NullToken { return { type: "NullLiteral" }; }
+
+BooleanLiteral
+  = TrueToken  { return { type: "BooleanLiteral", value: true  }; }
+  / FalseToken { return { type: "BooleanLiteral", value: false }; }
+
+primary
+  = (variable / integer)
+  / "(" _ additive:additive _ ")" { return additive; }
+
+value
+ = longopt / variable / integer / scalar / BooleanLiteral / NullLiteral / hexcolor / additive 
+
+// /* i am a comment (i can only appear before a command) */
+comment
+  = "/*" (!"*/" SourceCharacter)* "*/"
+
+// any character!
+SourceCharacter
+  = .
+
+// whitespace
+ws
+ = [ \t\n]
+
+_
+ = (ws / comment)*
+
+lb
+ = ";"
+</textarea>
 
 </body>
 </html>
