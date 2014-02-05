@@ -32,19 +32,17 @@ var router = {
 	initObj : {},
 	
 //proper way to add a route to the routes table. will have validation.
-	appendHash : function(arr)	{
-		return this._addInitOrHash('hash','append',arr);
-		},
-	prependHash : function(arr)	{
-		return this._addInitOrHash('hash','prepend',arr);
-		},
+	appendHash : function(obj)	{return this._addInitOrHash('hash','append',obj);},
+	prependHash : function(obj)	{return this._addInitOrHash('hash','prepend',obj);},
+	appendInit : function(obj)	{return this._addInitOrHash('init','append',obj);},
+	prependInit : function(obj)	{return this._addInitOrHash('init','prepend',obj);},
 
-	_addInitOrHash : function(mode,method,arr)	{
+	_addInitOrHash : function(mode,method,obj)	{
 		var r = false; //what is returned.
+		obj = obj || {};
 		if((method == 'append' || method == 'prepend') && (mode == 'init' || mode == 'hash'))	{
-			if(arr[0] && arr[2])	{ //route isn't validated against because a blank route is a valid route (homepage)
-				if(router.matchFunctions[arr[0]])	{
-					var obj = {'type' : arr[0], 'route' : arr[1], 'callback' : arr[2]}; //not supported just yet, but may be necessary for naming params returned by regexp type: , 'p' : arr[3]
+			if(obj.type && obj.route)	{ //route isn't validated against because a blank route is a valid route (homepage)
+				if(router.matchFunctions[obj.type])	{
 					method == 'prepend' ? this[mode+'Routes'].unshift(obj) : this[mode+'Routes'].push(obj);
 					r = true;
 					}
@@ -62,8 +60,7 @@ var router = {
 		return r;
 		},
 		
-	appendInit : function(arr)	{return this._addInitOrHash('init','append',arr);},
-	prependInit : function(arr)	{return this._addInitOrHash('init','prepend',arr);},
+
 		
 	//proper way to add an alias. will have validation.
 	addAlias : function(name,callback)	{
@@ -212,7 +209,7 @@ var router = {
 
 	handleHashChange : function()	{
 		if(location.hash.indexOf('#!') == 0)	{
-			var routeObj = router._getRouteObj(location.hash.substr(2).replace(/\/$/, ""),'hash'); //strips out the #! and trailing slash, if present. // ### TODO -> should the trailing / be stripped?
+			var routeObj = router._getRouteObj(location.hash.substr(2),'hash'); //if we decide to strip trailing slash, use .replace(/\/$/, "")
 			if(routeObj)	{
 				routeObj.hash = location.hash;
 				console.log(" -> WOOT! valid route!"); // console.dir(routeObj);
@@ -220,7 +217,9 @@ var router = {
 				}
 			else	{
 				console.log(" -> Uh Oh! no valid route found for "+location.hash);
-				//what to do here?
+				if(typeof router.aliases['404'] == 'function')	{
+					router._executeCallback({'callback':'404','hash':location.hash});
+					}
 				}
 			}
 		else	{
@@ -231,6 +230,21 @@ var router = {
 	};
 
 
+
+router.appendHash({'type':'match','route':'product/{{pid}}','callback':'product'});
+router.appendHash({'type':'exact','route':'company','callback':'company'});
+router.appendHash({
+	'type':'regexp',
+	'route': /^(.*?)\/open$/,
+	'callback':function(f){console.log(" -> hit on the regex!!!!!!"); console.dir(f);}
+	});
+
+router.addAlias("404",function(vars){  //third param of extensions/dependencies array? Would allow us to not load extensions till they're needed. speeds up init.
+	$('#globalMessaging').empty().append("Uh oh, the page for "+vars.hash+" could not be found.").slideDown();
+	});
+
+
+/*
 //hashes are checked with each hash change.  They can be added at any time, before or after the router.init function is run.
 router.appendHash(['regexp',/^(.*?)\/open$/,function(f){
 	console.log(" -> hit on the regex!!!!!!"); console.dir(f);
@@ -253,9 +267,7 @@ router.appendInit(['function',function(v){console.log('got to here'); return {'s
 
 
 
-router.addAlias("default",function(vars){  //third param of extensions/dependencies array? Would allow us to not load extensions till they're needed. speeds up init.
-	console.log(' -> default alias');
-	});
+
 
 
 router.addAlias("product",function(vars){  //third param of extensions/dependencies array? Would allow us to not load extensions till they're needed. speeds up init.
@@ -269,7 +281,7 @@ router.addAlias("company",function(){
 	console.log('company alias executed');
 	});
 
-
+*/
 //console.dir(router.routes);
 
 </script>
@@ -279,8 +291,8 @@ router.addAlias("company",function(){
 </head>
 
 <body onload="router.init();">
-
-<a href='#!product/XYZ/'>product link - XYZ</a><br />
+<div id='globalMessaging'></div>
+<a href='#!product/XYZ'>product link - XYZ</a><br />
 <a href='#!product/ABC/seo.html'>product link - ABC</a><br />
 <a href='#!company'>#!company</a><br />
 <a href='#!/company'>#!/company</a><br />
