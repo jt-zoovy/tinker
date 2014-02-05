@@ -30,7 +30,7 @@ function getRulesFromTextarea()	{
 	
 	if(success)	{
 		console.log(" -> successfully built parser");
-//		translateTemplate();
+		translateTemplate();
 		}
 	}
 /*
@@ -80,10 +80,17 @@ function translateTemplate()	{
 		"$shipAddress" : "123 evergreen terrace",
 		"$shipPostal" : "92127"
 		}
-	$("[data-bind]",$template).each(function(){
+	$("[data-bind]",$template).each(function(index){
+
 		var DB = $(this).data('bind');
-		console.log(" -> DB: ["+DB+"]");
-		parser.parse(DB);
+		try{
+			window.parser.parse(DB);
+			}
+		catch(e)	{
+			console.log("attempt to run parse on "+DB+" failed w/ the following error(s):");
+			console.dir(e)
+			}
+		console.log(" -> DB:"); console.dir(parser.parse(DB));
 		});
 	}
 var parser; //declared globally. this will be part of _app...
@@ -94,7 +101,8 @@ var parser; //declared globally. this will be part of _app...
 <body onload="makeTemplate(); getRulesFromTextarea('new_db_rules.pegjs');">
 
 <div id='someTemplate'>
-	<div data-bind="text ($color) --xyz='scalar' --abc true $variable #b00be5; command2; text ($shipAddress);"  title='address'></div>
+	<div data-bind="text ($color) --xyz='scalar' $variable #b00be5; command2; text ($shipAddress);"  title='address'></div>
+	<div data-bind="text ($color) --xyz='scalar' $variable #CC0000; command2; text ($shipAddress);"  title='address'></div>
 </div>
 
 <!--
