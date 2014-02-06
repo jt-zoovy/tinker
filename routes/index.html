@@ -29,7 +29,7 @@ var router = {
 	initRoutes : [], //get run once, at router init. allows for handling of URI vars et all.
 	hashRoutes : [], //an object, not an array. order is not required because route matches are implicit unless they define themselves otherwise.
 	aliases : {}, //functions executed by route.
-	initObj : {},
+	initObj : {}, //will get passed into init callbacks. will include hash, hash params, uri params and uri.
 	
 //proper way to add a route to the routes table. will have validation.
 	appendHash : function(obj)	{return this._addInitOrHash('hash','append',obj);},
@@ -212,7 +212,8 @@ var router = {
 			var routeObj = router._getRouteObj(location.hash.substr(2),'hash'); //if we decide to strip trailing slash, use .replace(/\/$/, "")
 			if(routeObj)	{
 				routeObj.hash = location.hash;
-				console.log(" -> WOOT! valid route!"); // console.dir(routeObj);
+//				routeObj.hashParams = (location.hash.indexOf('?') >= 0 ? app.u.kvp2Array(location.hash.split("?")[1]) : {})
+				console.log(" -> WOOT! valid route!"); console.dir(routeObj);
 				router._executeCallback(routeObj);
 				}
 			else	{
@@ -227,7 +228,7 @@ var router = {
 			//is not a hashbang. do nothing.
 			}
 		}
-	};
+	}
 
 
 

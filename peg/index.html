@@ -6,33 +6,264 @@
 
 <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
 <script type="text/javascript" src="peg-0.8.0.js"></script>
-
+<script type="text/javascript" src="jsonpath.js"></script>
 
 <script type='text/javascript'>
 
-function makeTemplate()	{
-	window.$template = $("#someTemplate");
+var templates = {};
+var formats = {
+	currency : function(v)	{
+		return v;
+		},
+	truncate : function(v)	{
+		return v;
+		},
+	prepend : function(v)	{
+		return v;
+		},
+	append : function(v)	{}
+	}
+var sampleProdData = {
+		"product" : {
+			"name" : "This is a product name.",
+			"base_price" : "5.23",
+			"created" : 1391714080,
+			"prod_image1" : "181657/24255646",
+			"prod_msrp" : "",
+			"prod_desc" : "Bacon ipsum dolor sit amet doner chicken ham hock swine meatball leberkas pancetta. Ham pastrami frankfurter brisket tail spare ribs pork chop rump beef ribs corned beef porchetta short ribs boudin capicola strip steak. Biltong jowl pork belly meatloaf jerky turkey. Bresaola strip steak andouille, porchetta turducken tongue ribeye ham pork chop. Kevin filet mignon strip steak brisket. Kevin turkey pastrami pork ham hock. Bacon ribeye beef ribs ham, shoulder swine flank strip steak pork chop prosciutto t-bone ground round."
+			}
+		}
+var pegParser; //declared globally. this will be part of _app... most likely.
+
+//here just for testing instances.
+var bob; 
+var frank;
+
+//creates an instance of the template, in memory.
+//interpolates all data-tlc on that template.
+//returns the template.
+var peggy = function(templateID, data)	{
+	this.templateID = templateID;
+	this.data = data;
+	this.buildErrorMessage = function(e) {
+		return e.line !== undefined && e.column !== undefined ? "Line " + e.line + ", column " + e.column + ": " + e.message : e.message;
+		}
+	this.translateTemplate = function()	{
+		var _self = this; //'this' context is lost within each loop.
+		var $t = window.templates[templateID].clone();
+//		console.log(" -> running peggyInstance.translateTemplate. data-tlc.length: "+$("[data-tlc]",$t).length);
+		$("[data-tlc]",$t).addBack("[data-tlc]").each(function(index,value){
+			var $tag = $(this), tlc = $tag.data('tlc');
+			console.log("----------------> start new $tag <-----------------");
+			var commands = false;
+			try{
+				commands = window.pegParser.parse(tlc);
+				}
+			catch(e)	{
+				console.log(self.buildErrorMessage(e));
+//				console.log("attempt to run parse on "+tlc+" failed w/ the following error(s):");
+				}
+			
+			if(commands && !$.isEmptyObject(commands))	{
+				_self.executeCommands($tag,commands);
+				}
+			else	{
+				console.warn("couldn't parse a tlc");
+				//could not parse tlc. error already reported.
+				}
+			console.log("----------------> end $tag <-----------------");
+			});
+		return $t;
+		} //translateTemplate
+
+
+/* //////////////////////////////     FORMATS	 \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\ */
+
+//passing the command into this will verify that the format exists (whether it be core or not)
+//may be able to merge this with the handler_apply. We'll see after the two are done and if the params passed into the functions are the same or no.
+	this.handler_format = function(cmd,value)	{
+		var format = cmd.args[0].key, r;
+		if(cmd.module == 'core' && this['format_'+format])	{
+			r =this['format_'+format](value,cmd.args);
+			}
+		else if(cmd.module.indexOf('#') >= 0)	{
+			console.log(" -> non 'core' based format. not handled yet");
+			//use format in extension.
+			}
+		else	{
+			console.log(" -> invalid core format specified");
+			//invalid format specified.
+			}
+		
+		console.log(" -> handler_format finished for "+format);
+		return r;
+		}
+
+	this.format_currency = function(value,args)	{
+		var cur = this.pluckValue(args);
+		return "$"+value+" ("+cur+")";
+		},
+	this.format_prepend = function(value,args)	{
+		var text = this.pluckValue(args);
+		return text+value;
+		},
+	this.format_append = function(value,args)	{
+		var text = this.pluckValue(args);
+		return value+text;
+		},
+	this.format_truncate = function(value,args)	{
+		var len = args[1].value;
+		var r = value.toString(); //what is returned. Either original value passed in or a truncated version of it.
+		if(!len || isNaN(len)){}
+		else if(r.length <= len){}
+		else	{
+			if (r.length > len) {
+/* Truncate the content of the string, then go back to the end of the previous word to ensure that we don't truncate in the middle of a word */
+				r = r.substring(0, len);
+				r = r.replace(/\w+$/, '');
+/* Add an ellipses to the end*/
+				r += '...';
+				}
+			}
+		return r;
+		} //truncate
+
+/* //////////////////////////////     APPLY		 \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\ */
+
+//passing the command into this will verify that the apply exists (whether it be core or not)
+//may be able to merge this with the handler_format. We'll see after the two are done and if the params passed into the functions are the same or no.
+	this.handler_apply = function(cmd,value)	{
+		var apply = cmd.args[0].key, r;
+		if(cmd.module == 'core' && this['apply_'+apply])	{
+			r =this['apply_'+apply](value,cmd.args);
+			}
+		else if(cmd.module.indexOf('#') >= 0)	{
+			console.log(" -> non 'core' based apply. not handled yet");
+			//use format in extension.
+			}
+		else	{
+			console.log(" -> invalid core apply specified");
+			//invalid format specified.
+			}
+		
+		console.log(" -> handler_apply finished for "+apply);
+		return r;
+		}
+
+
+
+
+
+
+
+//pass in the args array and this will return the value based on whether the input is a longopt or no.
+	this.pluckValue = function(args)	{
+		return (args[0].type == 'longopt' ? args[0].value.value : args[1].value);
+		}
+
+
+	this.args2string = function(args)	{
+		var r = ""; //what is returned.
+		for(var i = 0, L = args.length; i < L; i += 1)	{
+			r += args[i]
+			}
+		return r;
+		}
+	
+
+
+	this.handler_bind = function(cmd,vars)	{
+//		console.log("Now we bind"); console.dir(cmd);
+		//scalar type means get the value out of the data object.
+		vars[cmd.args[0].value] = (cmd.args[1].type == 'scalar') ? jsonPath(this.data, cmd.args[1].value) : cmd.args[1].value;
+		return cmd.args[0].value;
+		};
+	
+	this.handler_datetime = function(cmd,value)	{
+		var r; //what is returned.
+		var d = new Date(value);
+		if(isNaN(d.getMonth()+1))	{
+			r = value; //what was originally passed into isn't recognized as a valid date 
+			}
+		else	{
+			// NOT DONE YET
+			}
+		return r;
+		}
+
+	this.handler_tag = function(cmd,$tag,value)	{
+		//now do something with the tag.
+		$tag.text(value);
+		}
+
+
+
+	this.executeCommands = function($tag,commands)	{
+//		console.log(" -> running peggyInstance.executeCommands");
+		var binds = {}; //an object of all the binds set in args.
+		var focusBind; //the pointer to binds of the var currently in focus.
+
+		for(var i = 0, L = commands.length; i < L; i += 1)	{
+			console.log(i+") commands[i]: "+commands[i].name); // console.dir(commands[i]);
+			switch(commands[i].name)	{
+				case "bind":
+					focusBind = this.handler_bind(commands[i],binds);
+//					console.log(" -> focusBind: "+binds[focusBind]);
+					break;
+
+				case "format":
+					binds[focusBind] = this.handler_format(commands[i],binds[focusBind]);
+					console.log(" -> binds[focusBind]: "+binds[focusBind]);
+					break;
+
+				case "tag":
+					this.handler_tag(commands[i],$tag,binds[focusBind]);
+					break;
+
+				case "apply" :
+					this.handler_apply(commands[i],$tag);
+					break;
+				
+				case "datetime":
+					this.handler_datetime(commands[i]);
+					break;
+
+				default:
+					console.log("Unrecognized command name ["+commands[i].name+"] -> no matching handler.");//  ### TODO -> what to do here?	
+				}
+			
+			}
+		}
+	}
+
+
+function makeTemplates()	{
+	window.templates['someTemplate'] = $("#someTemplate").clone();
+	window.templates['someOtherTemplate'] = $('#someOtherTemplate').clone();
+	$("#someTemplate").empty().remove();
+	$("#someOtherTemplate").empty().remove();
 	}
 
 
 function getRulesFromTextarea()	{
+//	console.log(" -> getting rules from textarea");
 	var success = false;
 	try{
-		var parserSource = PEG.buildParser($('#grammar').val());
-		parser = eval(parserSource);
-		console.log(parser);
+		var pegParserSource = PEG.buildParser($('#grammar').val());
+		pegParser = eval(pegParserSource); //make sure pegParser is valid.
 		success = true;
 		}
 	catch(e)	{
-		console.warn("Could not build parser.");
+		console.warn("Could not build pegParser.");
 		console.error(buildErrorMessage(e));
 		}
 	
 	if(success)	{
-		console.log(" -> successfully built parser");
-		translateTemplate();
+		console.log(" -> successfully built pegParser");
+//		translateTemplate();
 		}
 	}
+
 /*
 function getRules(rulesURL)	{
 	console.log(' -> fetching rules: '+rulesURL);
@@ -53,58 +284,41 @@ function getRules(rulesURL)	{
 //			console.debug(data);
 			var success = false;
 			try{
-				var parserSource = PEG.buildParser($('#grammar').val());
-				parser = eval(parserSource);
+				var pegParserSource = PEG.buildParser($('#grammar').val());
+				pegParser = eval(pegParserSource);
 				success = true;
 				}
 			catch(e)	{
-				console.warn("Could not build parser.");
+				console.warn("Could not build pegParser.");
 				console.log(buildErrorMessage(e));
 				}
 			
 			if(success)	{
-				console.log(" -> successfully built parser");
+				console.log(" -> successfully built pegParser");
 				translateTemplate();
 				}
 			}
 		});
 	}
 */
-function buildErrorMessage(e) {
-	return e.line !== undefined && e.column !== undefined ? "Line " + e.line + ", column " + e.column + ": " + e.message : e.message;
-	}
 
-function translateTemplate()	{
-	console.log(' -> running translateTemplate');
-	var addressData = {
-		"$shipAddress" : "123 evergreen terrace",
-		"$shipPostal" : "92127"
-		}
-	$("[data-bind]",$template).each(function(index){
 
-		var DB = $(this).data('bind');
-		try{
-			window.parser.parse(DB);
-			}
-		catch(e)	{
-			console.log("attempt to run parse on "+DB+" failed w/ the following error(s):");
-			console.dir(e)
-			}
-		console.log(" -> DB:"); console.dir(parser.parse(DB));
-		});
-	}
-var parser; //declared globally. this will be part of _app...
-//console.log(parser.parse("hello"));
-//console.log(parser.parse("abd"));
+
+$(function() {
+	console.log("Document is ready. Let's do stuff.");
+	makeTemplates();
+	getRulesFromTextarea('new_db_rules.pegjs');
+
+	bob = new peggy('someTemplate',sampleProdData);
+	frank = new peggy('someOtherTemplate',sampleProdData);
+	$("#contentGoesHere").append(bob.translateTemplate());
+	});
 </script>
 </head>
-<body onload="makeTemplate(); getRulesFromTextarea('new_db_rules.pegjs');">
+<body>
 
-<div id='someTemplate'>
-	<div data-bind="text ($color) --xyz='scalar' $variable #b00be5; command2; text ($shipAddress);"  title='address'></div>
-	<div data-bind="text ($color) --xyz='scalar' $variable #CC0000; command2; text ($shipAddress);"  title='address'></div>
-</div>
-
+<div id='contentGoesHere' style='border:1px dashed #c00; padding:10px;'></div>
+<br />
 <!--
 	<div data-bind="text(shipaddress2);"  title='address 2'></div>
 
@@ -114,46 +328,92 @@ var parser; //declared globally. this will be part of _app...
 	<div data-bind="text(shipcountrycode);" title='country'></div>
 -->
 
-<textarea id='grammar' rows='20' cols='50'>
+<textarea id='grammar' rows='20' cols='50' style='display:none;'>
 start
  = call+
 
 call
- = command:(block_command / command) _ lb* { return command }
+ = grammar 
+
+grammar
+ = IfStatement _ lb*
+ / BindStatement _ lb*
+ / command:(command) _ lb* { return command }
 
 command
- = _ cmd:[A-Za-z0-9?]+ args:((ws+ value)+)? _ lb+ {
+ = _ module:([a-z_]+ "#")? cmd:[A-Za-z0-9?]+ args:((ws+ value)+)? _ lb* {
      return {
        type: "command",
+       module: module || "core",
        name: cmd.join("").toLowerCase(),
        args: args ? args.map(function(a) { return a[1] }) : null
      }
    }
 
-// reserved for future looping/code nesting/lexical scope
-// not currently functional!
-block
- = "{" lb* e:(block_command / command)+ lb* _ "}" { return e }
 
-block_command
- = e:command _ b:block lb* {
-     e.block = b;
-     return e;
-}
+// ** BIND **
+// bind $var 'something';    (jsonpath lookup)
+// bind $var $someothervar;  (jsonpath lookup)
+// bind $var ~tag;           (returns tag id/path)
+// bind ~tag '#tagid';       jQuery('#tagid')
+// bind ~tag $tagid          jQuery($tagid)
+BindStatement
+ = "bind" _ set:(variable tag) _ src:(variable / scalar tag) _ lb+ {
+  return { type:"BIND", Set:set, Src:src } 
+  }
+
+
+
+IfStatement
+  = "if" _ "(" _ condition:command _ ")" _ ifStatement:Block elseStatement:(_ "else" _ Block)? _ lb+ {
+      return {
+        type:     "IF",
+        When:     condition,
+        IsTrue:   ifStatement,
+        IsFalse: elseStatement !== null ? elseStatement[3] : null
+      };
+   }
+
+
+Block
+  = "{{" _ statements:(StatementList _)? "}}" {
+      return {
+        type:       "Block",
+        statements: statements !== null ? statements[0] : []
+      };
+    }
+
+StatementList
+  = head:Statement tail:(_ Statement)* {
+      var result = [head];
+      for (var i = 0; i < tail.length; i++) {
+        result.push(tail[i][1]);
+      }
+      return result;
+    }
+
+Statement
+  = Block
+  / command+
+  
+
+
+
+/* value types */
+
+// ~tag is a reference to a jquery object
+tag 
+ = "~" tag:([a-zA-Z]+) {
+   // tag table should maintain reference to tags on DOM
+   return { type:"tag", tag:tag.join(""), jq:null }
+   }
+
+boolean 
+ = "true" {return{ "type":"boolean", "value": true }}
+ / "false" {return{ "type":"boolean", "value": false }}
 
 // longopt start with a --
 longopt
- = ( longOptWithValue )
- / ( longOptSolo )
-
-// --abc
-longOptSolo 
- = "--" k:([a-zA-Z]+) {
-     return{ type:"longopt", key: k.join(""), value:null }
-     }
-
-// --abc=$var --abc='var' --abc=#b00be5; 
-longOptWithValue
  = "--" k:([a-zA-Z]+) "=" v:( value )  {
     return {
        type: "longopt",
@@ -161,6 +421,14 @@ longOptWithValue
        value: v
        }
     }
+ / "--" k:([a-zA-Z]+) {
+    return {
+      type: "longopt",
+      key: k.join(""),
+      value: null
+      }
+    }
+
 
 // scalar (string)
 // NOTE: at this point there is no way to escape a ' in a string.
@@ -195,19 +463,10 @@ hexcolor
      return { type:"hexcolor", value: v.join("")  }
      }
 
-//
-// right now this returns an additive command ex:
-// { type:"math", sign: "+", args:[1,2] 
-// it probably makes more sense to do the math and return 
-//  this as an integer of course since I don't have a variable lookup
-//  right now i can't really test this .. but this is fun:
-//  ($a+10+50+70) 
-// the current result is a little wonky... but loveable. 
-//
 additive
   = left:muldiv _ sign:[+-] _ right:additive { 
       return { 
-        type: "math", 
+        type: "command", 
         name:sign, 
         args:[left,right] 
       }
@@ -217,88 +476,27 @@ additive
 muldiv
   = left:primary _ sign:[*/] _ right:muldiv {
       return { 
-        type: "math", 
+        type: "command", 
         name: sign, 
         args:[left, right] 
       }
     }
   / primary
 
-IdentifierStart
-  = "$"
-  / "_"
-
-IdentifierPart
-  = IdentifierStart
-
-ReservedWord
-  = FutureReservedWord
-  / NullLiteral
-  / BooleanLiteral
-
-FutureReservedWord
-  = (
-      "as"
-      /  "break"
-      / "begin"
-      / "case"
-      / "catch"
-      / "continue"
-      / "debugger"
-      / "default"
-      / "delete"
-      / "do"
-      / "else"
-      / "elsif"
-      / "end"
-      / "finally"
-      / "for"
-      / "function"
-      / "if"
-      / "instanceof"
-      / "in"
-      / "new"
-      / "return"
-      / "switch"
-      / "this"
-      / "throw"
-      / "try"
-      / "typeof"
-      / "var"
-      / "void"
-      / "while"
-      / "wend"
-      / "with"
-    )
-    !IdentifierPart
-
-NullToken       = "null"             !IdentifierPart
-TrueToken       = "true"             !IdentifierPart
-FalseToken      = "false"            !IdentifierPart
-
-NullLiteral
-  = NullToken { return { type: "NullLiteral" }; }
-
-BooleanLiteral
-  = TrueToken  { return { type: "BooleanLiteral", value: true  }; }
-  / FalseToken { return { type: "BooleanLiteral", value: false }; }
-
 primary
   = (variable / integer)
   / "(" _ additive:additive _ ")" { return additive; }
 
 value
- = longopt / variable / integer / scalar / BooleanLiteral / NullLiteral / hexcolor / additive 
+ = longopt / variable / integer / scalar / boolean / tag / hexcolor / additive 
 
 // /* i am a comment (i can only appear before a command) */
 comment
-  = "/*" (!"*/" SourceCharacter)* "*/"
+  = "/*" (!"*/" SourceCharacter)* "*/" { return{}; }
 
-// any character!
 SourceCharacter
   = .
 
-// whitespace
 ws
  = [ \t\n]
 
@@ -308,6 +506,27 @@ _
 lb
  = ";"
 </textarea>
+
+
+
+
+
+<div id='someTemplate' style='background:blue;'>
+	<h1 data-tlc="bind $var '$.product.name'; format --append=' - thats right! '; tag --overwrite;">Lorem Ispsum Producismo Namola</h1>
+	<h2 data-tlc="bind $var '$.product.base_price'; format --currency='USD';  format --prepend='price tag: '; tag --overwrite;"></h2>
+	<div data-tlc="bind $var '$.product.prod_desc'; format --truncate 250; tag --overwrite;">default description</div>
+</div>
+
+<div id='someOtherTemplate' data-tlc="bind $var '$.product.prod_name'; tag --overwrite;" style='background:green;'>
+	
+	<h3 data-tlc="bind $var '$.product.prod_msrp'; tag --overwrite;">Lorem Ispsum Producismo Namola</h3>
+	<img data-tlc="bind $var '$.product.prod_image1'; apply --media --width=100 --height=100 --bgcolor '#000'; tag --overwrite;" />
+	<div data-tlc="bind $var '$.product.prod_desc'; tag --overwrite;"></div>
+</div>
+
+
+
+
 
 </body>
 </html>

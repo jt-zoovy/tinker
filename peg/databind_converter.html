@@ -1,0 +1,240 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>Untitled Document</title>
+
+
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
+
+<script>
+
+//turns the data-bind value into an object.
+function parseDataBind(data)	{
+//			_app.u.dump('BEGIN parseDataBind');
+	var rule = {};
+	if(data)	{
+		var declarations = data.split(';');
+		declarations.pop(); //the ending ; causes the last entry to be blank. this removes it. also means the data bind MUST end in a ;
+		var len = declarations.length;
+		for (var i = 0; i < len; i++)	{
+			var loc = declarations[i].indexOf(':'); //splits at first :. this may mean : in the values is okay. test.
+//remove whitespace from property otherwise could get invalid 'key'.
+			var property = jQuery.trim(declarations[i].substring(0, loc)); 
+//					var value = jQuery.trim(declarations[i].substring(loc + 1));  //commented out 12/15/12. may want a space in the value.
+			var value = declarations[i].substring(loc + 1);
+//						_app.u.dump(' -> property['+i+']: '+property);
+//						_app.u.dump(' -> value['+i+']: "'+value+'"');
+			if(property != "" && value != "" && !rule[property])	{ //only the first property wins. discard the rest. (var can't be set twice)
+//need to trim whitespace from values except pre and post text. having whitespace in the value causes things to not load. However, it's needed in pre and post text.
+				rule[property] = (property == 'pretext' || property == 'posttext') ? value : jQuery.trim(value);
+				}
+			}
+		}
+
+//			_app.u.dump('END parseDataBind');
+	return rule;
+	}
+
+function parseDataVar(v)	{
+	var r; //what is returned.
+	if(v)	{
+		r = v.replace(/.*\(|\)/gi,'');
+		}
+	else	{r = false;}
+	return r;
+	}
+
+
+
+function doIt2It()	{
+	console.log(" -> doIt2It");
+	var template = $('#databindContent').val();
+	var $t = $(template);
+	$("[data-bind]",$t).each(function(){
+		var $tag = $(this);
+		//old: var: session(session.recentCategories.0); format:breadcrumb; extension:store_navcats; loadsTemplate: breadcrumbTemplate;
+		//new: command1 $variable --xyz='scalar' --abc true #b00be5; command2 --moreParameters; 
+		var odb = parseDataBind($tag.data('bind')); // Old Data Bind. sure.
+		var command = '';
+
+		if(odb.var)	{
+			command += "bind '$"+odb.var.split('(')[0]+'.'+parseDataVar(odb.var)+"'; ";
+			}
+
+		if(odb.extension)	{
+			command += odb.extension+"#";
+			command += odb.format+';';
+			}
+		else	{
+			command += "tag --overwrite;";
+			}
+		
+		
+		console.log(command);
+		$tag.removeAttr('data-bind').attr('data-tlc',command);
+		})
+	$('#grammarContent').val($t.html())
+	}
+</script>
+
+</head>
+
+<body>
+
+
+
+
+<textarea id='databindContent' style='width:40%; height:100px;'>
+<div id='productTemplate' class='productPage'>
+
+<ul class='clearfix noPadOrMargin fluidList breadcrumb' data-bind='var: session(session.recentCategories.0); format:breadcrumb; extension:store_navcats; loadsTemplate: breadcrumbTemplate;'></ul>
+
+<table class='prodViewerContainer'>
+<tr>
+	<td class='imageContainer'>
+
+<div onClick='app.ext.store_product.u.showPicsInModal({"pid":$(this).attr("data-pid")});' class='pointer clearfix'  data-bind='var:product(pid);format:assignAttribute; attribute:data-pid;'>
+
+	<div data-bind="var: product(zoovy:prod_is_tags); format:addTagSpans;" class='tagsContainer'></div>
+	<img src='blank.gif' class='prodBigImage' alt='' data-bind='var: product(zoovy:prod_image1); format:imageURL;' width='340' height='340' />
+
+</div>
+
+	<div data-bind='var:product(pid);format:assignAttribute; attribute:data-pid;' class='prodThumbs'>
+
+<div onClick='app.ext.store_product.u.showPicsInModal({"pid":$(this).parent().attr("data-pid"),"int":"2"});' class='pointer'><img src='blank.gif' data-bind='var: product(zoovy:prod_image2); format:imageURL;' alt='' width='100' height='100' /></div>
+
+<div onClick='app.ext.store_product.u.showPicsInModal({"pid":$(this).parent().attr("data-pid"),"int":"3"});' class='pointer'><img src='blank.gif' data-bind='var: product(zoovy:prod_image3); format:imageURL;' alt=''  width='100' height='100' /></div>
+
+<div onClick='app.ext.store_product.u.showPicsInModal({"pid":$(this).parent().attr("data-pid"),"int":"4"});' class='pointer'><img src='blank.gif' data-bind='var: product(zoovy:prod_image4); format:imageURL;' alt='' width='100' height='100' /></div>
+
+	</div>
+
+	</td>
+
+	<td class='prodSummaryContainer marginBottom no_underline'>
+	<h1 data-bind='var: product(zoovy:prod_name); format:text;'></h1>
+
+	<hgroup class='marginBottom'>
+		<h5 class='stid' data-bind='var: product(pid); format:text; pretext: Sku: ;'></h5>
+		<h5 data-bind='var: product(zoovy:prod_mfg); format:searchLink; extension:myRIA; pretext: Mfg: ;'></h5>
+		<h5 data-bind='var: product(zoovy:prod_mfgid); format:text; pretext: Mfg ID: ;'></h5>
+	</hgroup>
+
+	<div class='priceContainer marginBottom'>
+		<h4 class='basePrice' data-bind='var: product(zoovy:base_price); format:money; currencySign: $;  hideZero:true; pretext: Our Price: ;'></h4>
+		<h5 class='prodMSRP' data-bind='var: product(zoovy:prod_msrp); format:money; currencySign: $;  hideZero:true; pretext: MSRP: ;'></h5>
+		<span class='savings'>
+			<span class='savingsDifference' data-bind='var: product(pid); format:priceRetailSavingsDifference; extension:myRIA; pretext: You save: ;'></span>
+			<span class='savingsPercentage' data-bind='var: product(pid); format:priceRetailSavingsPercentage; extension:myRIA; pretext: (; posttext:);'></span>
+		</span>
+	</div>
+	<div class="socialLinks"></div>
+
+
+	<table class='marginBottom fullWidth gridTable' data-app-role='childrenSiblingsContainer'>
+		<tbody data-bind="var: product(zoovy:grp_children); format:productList; extension:store_prodlist; loadsTemplate:productListTemplateChildren;hide_summary:true; withInventory:1; withVariations:1;"></tbody>
+	</table>
+
+
+	<div data-bind='var: product(zoovy:ship_latency); format:text;pretext:Normally ships in ;posttext: day(s);' class='latency marginBottom'></div>
+	<div data-app-role='timeInTransit' class='displayNone'></div>
+
+	<form data-bind='var: product(pid); format:atcForm; extension:store_product;' class='prodViewerAddToCartForm clearfix' action='#' onSubmit="app.ext.myRIA.u.addItemToCart($(this), {'action':'modal'}); return false;">
+
+		<fieldset data-bind='var: product(pid); format:atcVariations; extension:store_product;' class='borderNone'></fieldset>
+		<fieldset data-bind='useParentData:true; format:atcQuantityInput; extension:store_product; pretext:Quantity: ; defaultValue:1;' class='borderNone'></fieldset>
+
+		<input type='submit' value='Add to Cart' class='ui-button ui-button-text ui-corner-all ui-state-default addToCartButton displayNone' data-bind='var: product(pid); format:addToCartButton; extension:store_product;'  />
+	</form>
+
+	<div data-bind='var:product(zoovy:prod_cpsiawarning); format:cpsiaWarning; extension:myRIA;'></div>
+	<div data-bind='var:product(zoovy:qty_price);format:quantityDiscounts; extension:store_product; pretext:Quantity Discounts:; className:marginBottom;'></div>
+
+	<section class='marginBottom'>
+		<span data-bind='var: reviews(reviews.average); format:addClass; className:review_;' class='reviewSprite'></span>
+		<span data-bind='var: reviews(reviews.total); format:text;posttext: from ;posttext: reviews; className:numReviews;'></span>
+	</section>
+
+	<menu data-bind='var:product(pid);format:assignAttribute; attribute:data-pid;' class='CRMButtonMenu'>
+
+	<a href='#' onClick='app.ext.store_crm.u.showReviewFrmInModal({"pid":$(this).parent().attr("data-pid"),"templateID":"reviewFrmTemplate"}); return false;'>Write Review</a>	|
+
+	<a href='#' onClick="app.ext.myRIA.a.add2BuyerList({sku:$(this).parent().attr('data-pid'),'listid':'wishlist'}); return false;">Add to Wishlist</a>
+
+	</menu>
+
+	</td>
+</tr>
+<tr>
+	<td colspan='2' class="tabbedProductContentTD">
+<!--
+the tabs are built in an onComplete.  ID's are added based on sku AND index, so the index (order) of the tabs MUST match the order of the tabContent divs
+or the tab clicked won't open the right content.
+It's done this way because ID's hard coded into template are bad mojo (templates are recycled) and because using data-binds to add id's caused some serious issues
+-->
+<div class='prodTabs tabbedProductContent'>
+
+	<ul class='tabs'>
+		<li class='prodDescTab'><a href='#prodDesc'>Description</a></li>
+		<li class='prodDetailTab displayNone' data-bind='var: product(zoovy:prod_detail); format:showIfSet;'><a href='#prodSpecs'>Specs</a></li>
+		<li class='prodFeaturesTab displayNone' data-bind='var: product(zoovy:prod_features); format:showIfSet;'><a href='#prodFeatures'>Features</a></li>
+		<li class='prodReviewsTab'><a href='#prodReviews'>Reviews</a></li>
+		<li class='prodVideoTab displayNone' data-bind='var: product(youtube:videoid); format:showIfSet;'><a href='#prodVideo'>Video</a></li>
+		<li class='prodAccessoriesTab displayNone' data-bind='var: product(zoovy:accessory_products); format:showIfSet;'><a href='#prodAccessories'>Accessories</a></li>
+	</ul>
+
+	<div class='tabContent' data-anytab-content='prodDesc'>
+		<div data-bind='var: product(zoovy:prod_desc); format:wiki; wikiFormats:myRIA;'></div>
+	</div>
+
+	<div class='tabContent' data-anytab-content='prodSpecs'>
+		<div data-bind='var: product(zoovy:prod_detail); format:wiki; wikiFormats:myRIA;'></div>
+	</div>
+
+	<div class='tabContent' data-anytab-content='prodFeatures'>
+		<div data-bind='var: product(zoovy:prod_features); format:wiki; wikiFormats:myRIA;'></div>
+	</div>
+
+
+	<div  class='tabContent' data-anytab-content='prodReviews'>
+
+		<div class='clearfix alignRight'>
+			<button class='ui-button-text ui-button ui-state-default ui-corner-all' onClick='app.ext.store_crm.u.showReviewFrmInModal({"pid":$(this).attr("data-pid"),"templateID":"reviewFrmTemplate"});' data-bind='var:product(pid);format:assignAttribute; attribute:data-pid;'>Write Review</button>
+		</div>
+
+		<ul class='listStyleNone clearfix productReviewsList' data-bind="var: reviews(reviews.@reviews); format:processList; loadsTemplate:productReviewsTemplateDetail;"></ul>
+
+	</div>
+
+	<div class='tabContent' data-anytab-content='prodVideo'>
+		<div data-bind='var: product(youtube:videoid); format:youtubeVideo;'></div>
+	</div>
+
+	<div class='tabContent' data-anytab-content='prodAccessories'>
+<ul class='listStyleNone fluidList clearfix noPadOrMargin lineItemProdlist' data-bind="var: product(zoovy:accessory_products); format:productList; extension:store_prodlist;loadsTemplate:productListTemplateATC;hide_pagination:true;hide_summary:true; withReviews:1; withInventory:1; withVariations:1;"></ul>
+	</div>
+
+
+
+
+</div>
+
+	</td>
+</tr>
+</table>
+<div class='prodlistRelatedContainer'>
+	<ul class='listStyleNone fluidList clearfix noPadOrMargin productList' data-bind="var: product(zoovy:related_products); format:productList; extension:store_prodlist;loadsTemplate:productListTemplate;hide_pagination:true;hide_summary:true; before:<h2>Similar Items</h2>; withReviews:1;"></ul>
+</div>
+
+
+</div></textarea>
+
+
+<textarea id='grammarContent' style='width:40%; height:100px;'></textarea>
+
+<button onClick='doIt2It();'>Do It</button>
+
+</body>
+</html>
