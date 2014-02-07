@@ -39,15 +39,35 @@ var pegParser; //declared globally. this will be part of _app... most likely.
 var bob; 
 var frank;
 
+
+
+
+/*
+
+have a function for convert args to hash.
+This will allow us to easily check to see if --empty AND --img (or any two verbs in apply) are set and to process them all.
+
+NOTES -> a single CMD could have several formats in the args.  The args are gonna be condensed down into one hash per rule.
+formats are processed in order.
+apply is processed in a specific order. empty, then remove, then 'magic' (images, etc), then append/prepend/inner/etc.
+
+*/
+
+
+
 //creates an instance of the template, in memory.
 //interpolates all data-tlc on that template.
 //returns the template.
 var peggy = function(templateID, data)	{
+
 	this.templateID = templateID;
 	this.data = data;
+
+//used w/ peg parser for tlc errors.
 	this.buildErrorMessage = function(e) {
 		return e.line !== undefined && e.column !== undefined ? "Line " + e.line + ", column " + e.column + ": " + e.message : e.message;
 		}
+//This is where the magic happens. Run this and the translated template will be returned.
 	this.translateTemplate = function()	{
 		var _self = this; //'this' context is lost within each loop.
 		var $t = window.templates[templateID].clone();
@@ -63,7 +83,7 @@ var peggy = function(templateID, data)	{
 				console.log(self.buildErrorMessage(e));
 //				console.log("attempt to run parse on "+tlc+" failed w/ the following error(s):");
 				}
-			
+
 			if(commands && !$.isEmptyObject(commands))	{
 				_self.executeCommands($tag,commands);
 				}
@@ -76,8 +96,29 @@ var peggy = function(templateID, data)	{
 		return $t;
 		} //translateTemplate
 
+//used in 'apply' and possibly elsewhere. changes the args arrays into a single object for easy lookup.
+	this.args2obj = function(args)	{
+		var r = {};
+		for(var i = 0, L = args.length; i < L; i += 1)	{
+			r[args[i].key] = (args[i].value && args[i].value.value) ? args[i].value.value : true; //some keys, like append or media, have no value.
+			}
+		return r;
+		}
+
+//The vars object should match up to what the attributes are on the image tag. It means the object used to create this instance can also be passed directly into a .attr()
+	this.makeImageURL	= function(vars)	{
+		if(vars['data-bgcolor'].charAt(0) == '#')	{vars['data-bgcolor'] = vars['data-bgcolor'].substr(1)}
+		var url = (vars.width ? "-W"+vars.width : "")+(vars.height ? "-H"+vars.height : "")+(vars['data-bgcolor'] ? "-B"+vars['data-bgcolor'] : "")+(vars['data-minimal'] ? "-M" : "")+"/"+vars['data-filename']
+		//don't want the first character to be a -. all params are optional, stripping first char is the most efficient way to build the path.
+		return "http://www.sporks.zoovy.com/media/img/-/"+url.substr(1); //### TODO -> obviously, we don't want sporks info in URL.
+		}
+
+
+
 
 /* //////////////////////////////     FORMATS	 \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\ */
+
+
 
 //passing the command into this will verify that the format exists (whether it be core or not)
 //may be able to merge this with the handler_apply. We'll see after the two are done and if the params passed into the functions are the same or no.
@@ -94,48 +135,92 @@ var peggy = function(templateID, data)	{
 			console.log(" -> invalid core format specified");
 			//invalid format specified.
 			}
-		
-		console.log(" -> handler_format finished for "+format);
 		return r;
 		}
 
 	this.format_currency = function(value,args)	{
-		var cur = this.pluckValue(args);
-		return "$"+value+" ("+cur+")";
-		},
+		var r = value;
+		if(args && args.length)	{
+			var cur = this.pluckValue(args);
+			r = "$"+value+" ("+cur+")";
+			}
+		return r;
+		} //currency
 	this.format_prepend = function(value,args)	{
-		var text = this.pluckValue(args);
-		return text+value;
-		},
+		var r = value;
+		if(args && args.length)	{
+			var text = this.pluckValue(args);
+			r = text+value;
+			}
+		return r;
+		} //prepend
 	this.format_append = function(value,args)	{
-		var text = this.pluckValue(args);
-		return value+text;
-		},
+		var r = value;
+		if(args && args.length)	{
+			var text = this.pluckValue(args);
+			r = value+text;
+			}
+		return r;
+		} //append
 	this.format_truncate = function(value,args)	{
-		var len = args[1].value;
 		var r = value.toString(); //what is returned. Either original value passed in or a truncated version of it.
-		if(!len || isNaN(len)){}
-		else if(r.length <= len){}
-		else	{
-			if (r.length > len) {
-/* Truncate the content of the string, then go back to the end of the previous word to ensure that we don't truncate in the middle of a word */
-				r = r.substring(0, len);
-				r = r.replace(/\w+$/, '');
-/* Add an ellipses to the end*/
-				r += '...';
+		if(args && args.length)	{
+			var len = this.pluckValue(args);
+			
+			if(!len || isNaN(len)){}
+			else if(r.length <= len){}
+			else	{
+				if (r.length > len) {
+	/* Truncate the content of the string, then go back to the end of the previous word to ensure that we don't truncate in the middle of a word */
+					r = r.substring(0, len);
+					r = r.replace(/\w+$/, '');
+	/* Add an ellipses to the end*/
+					r += '...';
+					}
 				}
 			}
 		return r;
 		} //truncate
 
+
+
 /* //////////////////////////////     APPLY		 \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\ */
+
+
 
 //passing the command into this will verify that the apply exists (whether it be core or not)
 //may be able to merge this with the handler_format. We'll see after the two are done and if the params passed into the functions are the same or no.
-	this.handler_apply = function(cmd,value)	{
-		var apply = cmd.args[0].key, r;
-		if(cmd.module == 'core' && this['apply_'+apply])	{
-			r =this['apply_'+apply](value,cmd.args);
+// NOTE -> stopped on 'apply' for now. B is going to change the way the grammer hands back the response. Once he does that, I'll need to flatten the array into a hash to easily test if 'empty' or some other verb is set.
+	this.handler_apply = function($tag,cmd,binds,focusBind)	{
+//		console.log(" -> BEGIN handler_apply"); //console.dir(cmd);
+		var r = true;
+		if(cmd.module == 'core')	{
+			var cmdObj = this.args2obj(cmd.args); //an object is used to easily check if specific apply commands are present
+
+			if(cmdObj.empty)	{$tag.empty()}
+			if(cmdObj.hide)	{$tag.hide()}
+			if(cmdObj.show)	{$tag.show()}
+			if(cmdObj.remove)	{$tag.remove()}
+
+
+//images get their own special handling.
+			if(cmdObj.img)	{
+				cmdObj._name = 'img'; //let the img handler know if it's img or imageurl. underscore is present in case a 'name' attribute is ever added to image.
+				$tag = this.apply_img($tag,cmdObj,binds);
+				}
+			else	{
+
+				if(cmdObj.imageurl)	{
+					cmdObj._name = 'imageurl'; //let the img handler know if it's img or imageurl. underscore is present in case a 'name' attribute is ever added to image.
+					binds[cmdObj.var] = this.apply_img($tag,cmdObj,binds); //function returns an image url
+					}
+
+				if(cmdObj.append)	{
+	//				console.dir($tag);
+					$tag.append(binds[focusBind]);
+					}
+				}
+			
 			}
 		else if(cmd.module.indexOf('#') >= 0)	{
 			console.log(" -> non 'core' based apply. not handled yet");
@@ -143,10 +228,74 @@ var peggy = function(templateID, data)	{
 			}
 		else	{
 			console.log(" -> invalid core apply specified");
+			r = false;
 			//invalid format specified.
 			}
+		return r;
+		}
+
+
+
+/*
+#### TODO -> this isn't done 
+needs to check if 'media' is set and if so, that starts the medialib code.
+if not, check for src, which should be a file path.
+if neither media or src, something is amiss.
+This one block should get called for both img and imageurl but obviously, imageurl only returns the url.
+*/
+	this.apply_img = function($tag,cmdObj,binds)	{
+		var r = true,filePath;
+		console.dir(cmdObj);
+		if(cmdObj.media && binds[cmdObj.media])	{
+			console.log(" -> is mediaLib");
+			//build filepath for media lib
+			if(cmdObj.default)	{
+				console.log(" -> use attributes of tag to build image path");
+				//here need to check if default is set to a tag. not sure how, docs are not specific.
+				if($tag.is('img'))	{
+					cmdObj.mediaLibVars = {'width':$tag.attr('width'),'height':$tag.attr('height'),'data-bgcolor':$tag.data('bgcolor'),'data-minimal':$tag.data('minimal'),'data-filename':binds[cmdObj.media]};
+					cmdObj.mediaLibVars.src = this.makeImageURL(cmdObj.mediaLibVars);
+					}
+				else	{
+					r = false;
+					//the command to pull attributes from the tag is invalid because the tag isn't an image.
+					}
+				}
+			else	{
+				console.log(" -> use cmdOjb to build image path");
+				cmdObj.mediaLibVars = {'width':cmdObj.width,'height':cmdObj.height,'data-bgcolor':cmdObj.bgcolor,'data-minimal':cmdObj.minimal,'data-filename':binds[cmdObj.media]}
+				cmdObj.mediaLibVars.src = this.makeImageURL(cmdObj.mediaLibVars);
+				}
+			}
+		else if(cmdObj.src)	{
+			//do nothing here, but is valid (don't get into 'else' error handling).
+			}
+		else	{
+			r = false;
+			//either media or src left blank. OR media is tru and the var specified doesn't exist. ### TODO -> handle this error.
+			console.log(" -> either media ["+cmdObj.media+"] or src ["+cmdObj.src+"] not specified on appy img OR media is set but binds["+cmdObj.media+"] ["+binds[cmdObj.media]+"} is not.");
+			}
+
+		//to get here, the name is either imageurl or img.
+		console.log(" -> cmdObj._name: "+cmdObj._name);
+		//it's anticipated that _name == img on an img tag will be the highest use case for this.
+		if($tag.is('img') && cmdObj._name == 'img')	{
+			console.log(" -> img and img");
+			$tag.attr(cmdObj.mediaLibVars);
+			r = $tag;
+			}
+		else if(cmdObj._name == 'imageurl')	{r = filePath; console.log(' -> imageurl')}
+		else	{
+			if(cmdObj._name == 'img' && cmdObj.append)	{
+				$tag.append($("<img>").attr(cmdObj.mediaLibVars));
+				}
+			if(cmdObj._name == 'img' && cmdObj.prepend)	{
+				$tag.prepend($("<img>").attr(cmdObj.mediaLibVars));
+				}
+			r = $tag;
+			}
 		
-		console.log(" -> handler_apply finished for "+apply);
+		console.log(" -> _name: "+cmdObj._name+" r: "+r);
 		return r;
 		}
 
@@ -154,8 +303,7 @@ var peggy = function(templateID, data)	{
 
 
 
-
-
+// NOTE - won't need this, everything will come in as 'longopt', even if no param is required.
 //pass in the args array and this will return the value based on whether the input is a longopt or no.
 	this.pluckValue = function(args)	{
 		return (args[0].type == 'longopt' ? args[0].value.value : args[1].value);
@@ -177,7 +325,7 @@ var peggy = function(templateID, data)	{
 		//scalar type means get the value out of the data object.
 		vars[cmd.args[0].value] = (cmd.args[1].type == 'scalar') ? jsonPath(this.data, cmd.args[1].value) : cmd.args[1].value;
 		return cmd.args[0].value;
-		};
+		}
 	
 	this.handler_datetime = function(cmd,value)	{
 		var r; //what is returned.
@@ -191,37 +339,39 @@ var peggy = function(templateID, data)	{
 		return r;
 		}
 
-	this.handler_tag = function(cmd,$tag,value)	{
-		//now do something with the tag.
-		$tag.text(value);
-		}
-
-
-
 	this.executeCommands = function($tag,commands)	{
 //		console.log(" -> running peggyInstance.executeCommands");
-		var binds = {}; //an object of all the binds set in args.
-		var focusBind; //the pointer to binds of the var currently in focus.
+		var
+			binds = {}, //an object of all the binds set in args.
+			tags = {
+				'$tag' : $tag
+				}, //an object of tags.
+			focusBind, //the pointer to binds of the var currently in focus.
+			focusTag; //the pointer to the tag that is currently in focus.
 
 		for(var i = 0, L = commands.length; i < L; i += 1)	{
-			console.log(i+") commands[i]: "+commands[i].name); // console.dir(commands[i]);
+//			console.log(i+") commands[i]: "+commands[i].name); // console.dir(commands[i]);
 			switch(commands[i].name)	{
 				case "bind":
 					focusBind = this.handler_bind(commands[i],binds);
-//					console.log(" -> focusBind: "+binds[focusBind]);
 					break;
 
 				case "format":
 					binds[focusBind] = this.handler_format(commands[i],binds[focusBind]);
-					console.log(" -> binds[focusBind]: "+binds[focusBind]);
 					break;
 
-				case "tag":
-					this.handler_tag(commands[i],$tag,binds[focusBind]);
+				case "csss":
+					// this will get ~tag '.bob' and we use that selector within $template context to set a new tag.
+					//needs to add to the tags hash where key = value of ~tag (.bob) and value is the jquery object.
 					break;
 
 				case "apply" :
-					this.handler_apply(commands[i],$tag);
+					try{
+						this.handler_apply($tag,commands[i],binds,focusBind); //have to pass in all vars because things like 'media' delcare what var then need/want.
+						}
+					catch(err)	{
+						console.error(err);
+						}
 					break;
 				
 				case "datetime":
@@ -231,7 +381,6 @@ var peggy = function(templateID, data)	{
 				default:
 					console.log("Unrecognized command name ["+commands[i].name+"] -> no matching handler.");//  ### TODO -> what to do here?	
 				}
-			
 			}
 		}
 	}
@@ -512,15 +661,16 @@ lb
 
 
 <div id='someTemplate' style='background:blue;'>
-	<h1 data-tlc="bind $var '$.product.name'; format --append=' - thats right! '; tag --overwrite;">Lorem Ispsum Producismo Namola</h1>
-	<h2 data-tlc="bind $var '$.product.base_price'; format --currency='USD';  format --prepend='price tag: '; tag --overwrite;"></h2>
-	<div data-tlc="bind $var '$.product.prod_desc'; format --truncate 250; tag --overwrite;">default description</div>
+	<img data-tlc="bind $var '$.product.prod_image1'; apply --img --media=$var --width=100 --height=100 --bgcolor='#000000' --append;" />
+	<h1 data-tlc="bind $var '$.product.name'; format --append=' - thats right! '; apply --append;">Lorem Ispsum Producismo Namola</h1>
+	<h2 data-tlc="bind $var '$.product.base_price'; format --currency='USD';  format --prepend='price tag: '; apply --append;"></h2>
+	<div data-tlc="bind $var '$.product.prod_desc'; format --truncate=250; apply --append;">default description</div>
 </div>
 
 <div id='someOtherTemplate' data-tlc="bind $var '$.product.prod_name'; tag --overwrite;" style='background:green;'>
 	
 	<h3 data-tlc="bind $var '$.product.prod_msrp'; tag --overwrite;">Lorem Ispsum Producismo Namola</h3>
-	<img data-tlc="bind $var '$.product.prod_image1'; apply --media --width=100 --height=100 --bgcolor '#000'; tag --overwrite;" />
+	<img data-tlc="bind $var '$.product.prod_image1'; apply --img --media=$var --width=100 --height=100 --bgcolor='#000'  --append;" />
 	<div data-tlc="bind $var '$.product.prod_desc'; tag --overwrite;"></div>
 </div>
 
