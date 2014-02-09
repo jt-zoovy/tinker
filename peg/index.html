@@ -100,7 +100,7 @@ var peggy = function(templateID, data)	{
 	this.args2obj = function(args)	{
 		var r = {};
 		for(var i = 0, L = args.length; i < L; i += 1)	{
-			r[args[i].key] = (args[i].value && args[i].value.value) ? args[i].value.value : true; //some keys, like append or media, have no value.
+			r[args[i].key] = (args[i].value == null) ? true : args[i].value; //some keys, like append or media, have no value and will be set to null.
 			}
 		return r;
 		}
@@ -113,6 +113,12 @@ var peggy = function(templateID, data)	{
 		return "http://www.sporks.zoovy.com/media/img/-/"+url.substr(1); //### TODO -> obviously, we don't want sporks info in URL.
 		}
 
+
+// NOTE - won't need this, everything will come in as 'longopt', even if no param is required.
+//pass in the args array and this will return the value based on whether the input is a longopt or no.
+	this.pluckValue = function(args)	{
+		return (args[0].type == 'longopt' ? args[0].value.value : args[1].value);
+		}
 
 
 
@@ -127,7 +133,7 @@ var peggy = function(templateID, data)	{
 		if(cmd.module == 'core' && this['format_'+format])	{
 			r =this['format_'+format](value,cmd.args);
 			}
-		else if(cmd.module.indexOf('#') >= 0)	{
+		else if(cmd.module && cmd.module.indexOf('#') >= 0)	{
 			console.log(" -> non 'core' based format. not handled yet");
 			//use format in extension.
 			}
@@ -191,38 +197,36 @@ var peggy = function(templateID, data)	{
 //passing the command into this will verify that the apply exists (whether it be core or not)
 //may be able to merge this with the handler_format. We'll see after the two are done and if the params passed into the functions are the same or no.
 // NOTE -> stopped on 'apply' for now. B is going to change the way the grammer hands back the response. Once he does that, I'll need to flatten the array into a hash to easily test if 'empty' or some other verb is set.
-	this.handler_apply = function($tag,cmd,binds,focusBind)	{
+	this.handler_apply = function(cmd,globals)	{
 //		console.log(" -> BEGIN handler_apply"); //console.dir(cmd);
 		var r = true;
 		if(cmd.module == 'core')	{
-			var cmdObj = this.args2obj(cmd.args); //an object is used to easily check if specific apply commands are present
-
-			if(cmdObj.empty)	{$tag.empty()}
-			if(cmdObj.hide)	{$tag.hide()}
-			if(cmdObj.show)	{$tag.show()}
-			if(cmdObj.remove)	{$tag.remove()}
-
+			var argObj = this.args2obj(cmd.args); //an object is used to easily check if specific apply commands are present
+			var $tag = globals.tags[globals.focusTag]; //shortcut. will work for all non 'img' based applies. img implicitly declares a tag.
+			if(argObj.empty)	{$tag.empty()}
+			if(argObj.hide)	{$tag.hide()}
+			if(argObj.show)	{$tag.show()}
+			if(argObj.remove)	{$tag.remove()}
 
 //images get their own special handling.
-			if(cmdObj.img)	{
-				cmdObj._name = 'img'; //let the img handler know if it's img or imageurl. underscore is present in case a 'name' attribute is ever added to image.
-				$tag = this.apply_img($tag,cmdObj,binds);
+			if(argObj.img)	{
+				argObj._name = 'img'; //let the img handler know if it's img or imageurl. underscore is present in case a 'name' attribute is ever added to image.
+				globals.tags[globals.focusTag] = this.apply_img($tag,argObj,globals.binds);
 				}
 			else	{
 
-				if(cmdObj.imageurl)	{
-					cmdObj._name = 'imageurl'; //let the img handler know if it's img or imageurl. underscore is present in case a 'name' attribute is ever added to image.
-					binds[cmdObj.var] = this.apply_img($tag,cmdObj,binds); //function returns an image url
+				if(argObj.imageurl)	{
+					argObj._name = 'imageurl'; //let the img handler know if it's img or imageurl. underscore is present in case a 'name' attribute is ever added to image.
+					globals.binds[argObj.var] = this.apply_img($tag,argObj,globals.binds); //function returns an image url
 					}
 
-				if(cmdObj.append)	{
-	//				console.dir($tag);
-					$tag.append(binds[focusBind]);
+				if(argObj.append)	{
+					$tag.append(globals.binds[globals.focusBind]);
 					}
 				}
 			
 			}
-		else if(cmd.module.indexOf('#') >= 0)	{
+		else if(cmd.module && cmd.module.indexOf('#') >= 0)	{
 			console.log(" -> non 'core' based apply. not handled yet");
 			//use format in extension.
 			}
@@ -243,18 +247,17 @@ if not, check for src, which should be a file path.
 if neither media or src, something is amiss.
 This one block should get called for both img and imageurl but obviously, imageurl only returns the url.
 */
-	this.apply_img = function($tag,cmdObj,binds)	{
+	this.apply_img = function($tag,argObj,binds)	{
 		var r = true,filePath;
-		console.dir(cmdObj);
-		if(cmdObj.media && binds[cmdObj.media])	{
-			console.log(" -> is mediaLib");
+		argObj.media = argObj.media || {};
+		if(argObj.media.type == 'variable' && binds[argObj.media.value])	{
 			//build filepath for media lib
-			if(cmdObj.default)	{
+			if(argObj.default)	{
 				console.log(" -> use attributes of tag to build image path");
 				//here need to check if default is set to a tag. not sure how, docs are not specific.
 				if($tag.is('img'))	{
-					cmdObj.mediaLibVars = {'width':$tag.attr('width'),'height':$tag.attr('height'),'data-bgcolor':$tag.data('bgcolor'),'data-minimal':$tag.data('minimal'),'data-filename':binds[cmdObj.media]};
-					cmdObj.mediaLibVars.src = this.makeImageURL(cmdObj.mediaLibVars);
+					argObj.mediaLibVars = {'width':$tag.attr('width'),'height':$tag.attr('height'),'data-bgcolor':$tag.data('bgcolor'),'data-minimal':$tag.data('minimal'),'data-filename':binds[argObj.media]};
+					argObj.mediaLibVars.src = this.makeImageURL(argObj.mediaLibVars);
 					}
 				else	{
 					r = false;
@@ -262,125 +265,161 @@ This one block should get called for both img and imageurl but obviously, imageu
 					}
 				}
 			else	{
-				console.log(" -> use cmdOjb to build image path");
-				cmdObj.mediaLibVars = {'width':cmdObj.width,'height':cmdObj.height,'data-bgcolor':cmdObj.bgcolor,'data-minimal':cmdObj.minimal,'data-filename':binds[cmdObj.media]}
-				cmdObj.mediaLibVars.src = this.makeImageURL(cmdObj.mediaLibVars);
+				argObj.mediaLibVars = {'width':argObj.width.value,'height':argObj.height.value,'data-bgcolor':argObj.bgcolor.value,'data-minimal':(argObj.minimal ? argObj.minimal.value : 0),'data-filename':binds[argObj.media.value]}
+				argObj.mediaLibVars.src = this.makeImageURL(argObj.mediaLibVars);
 				}
 			}
-		else if(cmdObj.src)	{
+		else if(argObj.src.value)	{
 			//do nothing here, but is valid (don't get into 'else' error handling).
 			}
 		else	{
 			r = false;
 			//either media or src left blank. OR media is tru and the var specified doesn't exist. ### TODO -> handle this error.
-			console.log(" -> either media ["+cmdObj.media+"] or src ["+cmdObj.src+"] not specified on appy img OR media is set but binds["+cmdObj.media+"] ["+binds[cmdObj.media]+"} is not.");
+			console.log("Something was missing for apply_img.\if media.type ["+argObj.media.type+"] == 'variable' then binds[argObj.media.value] ["+binds[argObj.media.value]+"] must be set.\nor src ["+argObj.src+"] not specified on appy img OR media is set but binds["+argObj.media+"] ["+binds[argObj.media]+"} is not.");
 			}
 
 		//to get here, the name is either imageurl or img.
-		console.log(" -> cmdObj._name: "+cmdObj._name);
+//		console.log(" -> argObj._name: "+argObj._name);
 		//it's anticipated that _name == img on an img tag will be the highest use case for this.
-		if($tag.is('img') && cmdObj._name == 'img')	{
-			console.log(" -> img and img");
-			$tag.attr(cmdObj.mediaLibVars);
+		if($tag.is('img') && argObj._name == 'img')	{
+			$tag.attr(argObj.mediaLibVars);
 			r = $tag;
 			}
-		else if(cmdObj._name == 'imageurl')	{r = filePath; console.log(' -> imageurl')}
+		else if(argObj._name == 'imageurl')	{r = filePath; console.log(' -> imageurl')}
 		else	{
-			if(cmdObj._name == 'img' && cmdObj.append)	{
-				$tag.append($("<img>").attr(cmdObj.mediaLibVars));
+			if(argObj._name == 'img' && argObj.append)	{
+				$tag.append($("<img>").attr(argObj.mediaLibVars));
 				}
-			if(cmdObj._name == 'img' && cmdObj.prepend)	{
-				$tag.prepend($("<img>").attr(cmdObj.mediaLibVars));
+			if(argObj._name == 'img' && argObj.prepend)	{
+				$tag.prepend($("<img>").attr(argObj.mediaLibVars));
 				}
 			r = $tag;
 			}
 		
-		console.log(" -> _name: "+cmdObj._name+" r: "+r);
+//		console.log(" -> _name: "+argObj._name+" r: "+r);
 		return r;
 		}
 
 
 
-
-
-// NOTE - won't need this, everything will come in as 'longopt', even if no param is required.
-//pass in the args array and this will return the value based on whether the input is a longopt or no.
-	this.pluckValue = function(args)	{
-		return (args[0].type == 'longopt' ? args[0].value.value : args[1].value);
-		}
-
-
-	this.args2string = function(args)	{
-		var r = ""; //what is returned.
-		for(var i = 0, L = args.length; i < L; i += 1)	{
-			r += args[i]
-			}
-		return r;
-		}
-	
-
-
-	this.handler_bind = function(cmd,vars)	{
+	this.handler_BIND = function(cmd,globals)	{
 //		console.log("Now we bind"); console.dir(cmd);
 		//scalar type means get the value out of the data object.
-		vars[cmd.args[0].value] = (cmd.args[1].type == 'scalar') ? jsonPath(this.data, cmd.args[1].value) : cmd.args[1].value;
-		return cmd.args[0].value;
+		globals.binds[cmd.Set.value] = (cmd.Src.type == 'scalar') ? jsonPath(this.data, cmd.Src.value) : cmd.Src.value;
+		globals.focusBind = cmd.Set.value; // console.log(" -> globals.focusBind: "+globals.focusBind);
+		return cmd.Set.value;
 		}
 	
-	this.handler_datetime = function(cmd,value)	{
-		var r; //what is returned.
-		var d = new Date(value);
-		if(isNaN(d.getMonth()+1))	{
-			r = value; //what was originally passed into isn't recognized as a valid date 
+	this.handler_render = function(cmd,globals){
+		var r, argObj = this.args2obj(cmd.args); //an object is used to easily check if specific apply commands are present
+//		console.log(" -> cmd: "); console.dir(cmd);
+		if(argObj.wiki)	{
+			var $tmp = $("<div>").append(value);
+			//r = wikify($tmp.text()); //###TODO -> 
+			r = $tmp.text();
+			}
+		else if(argObj.html)	{
+			r = value; //if the content is already html, shouldn't have to do anything to it.
+			}
+		else if(argObj.dwiw)	{
+			// ###TODO -> need to determine if content is wiki or html.
+			r = value;
 			}
 		else	{
-			// NOT DONE YET
+			//unrecognized command.
+			r = value;
 			}
 		return r;
+		}
+		
+	this.handler_stringify = function(cmd,globals)	{
+		// ## NOT DONE -> shouldn't this be a format?
+//		return JSON.stringify(value);
+		}
+
+
+
+	this.handler_math = function(cmd,globals)	{
+		var value = Number(globals.binds[globals.focusBind]);
+		if(!isNaN(value))	{
+			for(var i = 0, L = cmd.args.length; i < L; i += 1)	{
+				switch(cmd.args[i].key)	{
+					case "add":
+						value += cmd.args[i].value.value; break;
+					case "sub":
+						value -= cmd.args[i].value.value; break;
+					case "mult":
+						value *= cmd.args[i].value.value; break;
+					case "div":
+						value /= cmd.args[i].value.value; break;
+					case "precision":
+						value = value.toFixed(cmd.args[i].value.value); break;
+					case "percent":
+						value = (value/100).toFixed(0); break;
+					}
+				}
+			globals.binds[globals.focusBind] = value;
+			}
+		else	{
+			console.log(" -> handler_math was run on a value ["+globals.binds[globals.focusBind]+" which is not a number.");
+			}
+		return value;
+		}
+	
+	this.handler_datetime = function(cmd,globals)	{
+
+		var value = globals.binds[globals.focusBind];
+		var argObj = this.args2obj(cmd.args), d = new Date(value*1000);
+
+
+		if(isNaN(d.getMonth()+1))	{
+			console.warn("In handler_datetime, value ["+value+"] is not a valid time format for Date()");
+			}
+//### FUTURE
+//		else if(argObj.out-strftime)	{}
+		else if (argObj.out.value == 'pretty')	{
+			var shortMon = new Array('Jan','Feb','Mar','Apr','May','June','July','Aug','Sep','Oct','Nov','Dec');
+			value = (shortMon[d.getMonth()])+" "+d.getDate()+" "+d.getFullYear()+ " "+d.getHours()+":"+((d.getMinutes()<10?'0':'') + d.getMinutes());
+			}
+		else if(argObj.out.value == 'mdy')	{
+			value = (d.getMonth()+1)+"/"+d.getDate()+"/"+d.getFullYear();
+			}
+		else	{
+			//invalid or no 'out' specified.
+			}
+		globals.binds[globals.focusBind] = value;
+		return value;
 		}
 
 	this.executeCommands = function($tag,commands)	{
 //		console.log(" -> running peggyInstance.executeCommands");
-		var
-			binds = {}, //an object of all the binds set in args.
-			tags = {
+		var globals = {
+			binds : {}, //an object of all the binds set in args.
+			tags : {
 				'$tag' : $tag
 				}, //an object of tags.
-			focusBind, //the pointer to binds of the var currently in focus.
-			focusTag; //the pointer to the tag that is currently in focus.
+			focusBind : '', //the pointer to binds of the var currently in focus.
+			focusTag : '$tag' //the pointer to the tag that is currently in focus.
+			}
+			
 
 		for(var i = 0, L = commands.length; i < L; i += 1)	{
-//			console.log(i+") commands[i]: "+commands[i].name); // console.dir(commands[i]);
-			switch(commands[i].name)	{
-				case "bind":
-					focusBind = this.handler_bind(commands[i],binds);
-					break;
-
-				case "format":
-					binds[focusBind] = this.handler_format(commands[i],binds[focusBind]);
-					break;
-
-				case "csss":
-					// this will get ~tag '.bob' and we use that selector within $template context to set a new tag.
-					//needs to add to the tags hash where key = value of ~tag (.bob) and value is the jquery object.
-					break;
-
-				case "apply" :
-					try{
-						this.handler_apply($tag,commands[i],binds,focusBind); //have to pass in all vars because things like 'media' delcare what var then need/want.
-						}
-					catch(err)	{
-						console.error(err);
-						}
-					break;
-				
-				case "datetime":
-					this.handler_datetime(commands[i]);
-					break;
-
-				default:
-					console.log("Unrecognized command name ["+commands[i].name+"] -> no matching handler.");//  ### TODO -> what to do here?	
+//			console.log(i+") commands[i]: handler_"+commands[i].type); console.dir(commands[i]);
+			if(commands[i].type == 'command')	{
+				try{
+					this['handler_'+commands[i].name](commands[i],globals);
+					}
+				catch(e){
+					console.error("Attempted to execute a handler for "+commands[i].name+", which either does not exist or resulted in an error.",e);
+					}
 				}
+			else if(commands[i].type == 'BIND')	{
+				this['handler_BIND'](commands[i],globals);
+				}
+			else	{
+				//unrecognized type.
+				}
+
 			}
 		}
 	}
@@ -478,22 +517,16 @@ $(function() {
 -->
 
 <textarea id='grammar' rows='20' cols='50' style='display:none;'>
-start
- = call+
+dataTLC
+ = (IfStatement / BindStatement / command)+
 
-call
- = grammar 
 
-grammar
- = IfStatement _ lb*
- / BindStatement _ lb*
- / command:(command) _ lb* { return command }
-
+// command name and module name must start with a letter or underscore
 command
- = _ module:([a-z_]+ "#")? cmd:[A-Za-z0-9?]+ args:((ws+ value)+)? _ lb* {
+ = _ module:([A-Za-z0-9_]+ "#")? cmd:[A-Za-z0-9_]+ args:((ws+ value)+)? _ lb* {
      return {
        type: "command",
-       module: module || "core",
+       module: module ? module[0].join("") : "core",
        name: cmd.join("").toLowerCase(),
        args: args ? args.map(function(a) { return a[1] }) : null
      }
@@ -507,7 +540,7 @@ command
 // bind ~tag '#tagid';       jQuery('#tagid')
 // bind ~tag $tagid          jQuery($tagid)
 BindStatement
- = "bind" _ set:(variable tag) _ src:(variable / scalar tag) _ lb+ {
+ = "bind" _ set:(variable / tag) _ src:(variable / scalar / tag) _ lb+ {
   return { type:"BIND", Set:set, Src:src } 
   }
 
@@ -552,9 +585,9 @@ Statement
 
 // ~tag is a reference to a jquery object
 tag 
- = "~" tag:([a-zA-Z]+) {
+ = "~" tag:([a-zA-Z0-9\-_]+) {
    // tag table should maintain reference to tags on DOM
-   return { type:"tag", tag:tag.join(""), jq:null }
+   return { type:"tag", value:tag.join(""), jq:null }
    }
 
 boolean 
@@ -654,6 +687,8 @@ _
 
 lb
  = ";"
+
+
 </textarea>
 
 
@@ -664,6 +699,8 @@ lb
 	<img data-tlc="bind $var '$.product.prod_image1'; apply --img --media=$var --width=100 --height=100 --bgcolor='#000000' --append;" />
 	<h1 data-tlc="bind $var '$.product.name'; format --append=' - thats right! '; apply --append;">Lorem Ispsum Producismo Namola</h1>
 	<h2 data-tlc="bind $var '$.product.base_price'; format --currency='USD';  format --prepend='price tag: '; apply --append;"></h2>
+	<h5 data-tlc="bind $var '$.product.base_price'; math --add=20 --sub=10 --precision=0 --mult=3 --percent; format --currency='USD';  format --prepend='Fake msrp: '; apply --append;"></h5>
+	<h3 data-tlc="bind $var '$.product.created'; datetime --out='pretty'; apply --append;"></h3>
 	<div data-tlc="bind $var '$.product.prod_desc'; format --truncate=250; apply --append;">default description</div>
 </div>
 
