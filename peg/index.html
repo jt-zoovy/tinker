@@ -11,18 +11,6 @@
 <script type='text/javascript'>
 
 var templates = {};
-var formats = {
-	currency : function(v)	{
-		return v;
-		},
-	truncate : function(v)	{
-		return v;
-		},
-	prepend : function(v)	{
-		return v;
-		},
-	append : function(v)	{}
-	}
 var sampleProdData = {
 		"product" : {
 			"name" : "This is a product name.",
@@ -539,7 +527,7 @@ function getRules(rulesURL)	{
 $(function() {
 	console.log("Document is ready. Let's do stuff.");
 	makeTemplates();
-	getRulesFromTextarea('new_db_rules.pegjs');
+	getRulesFromTextarea(); //'new_db_rules.pegjs'
 
 	bob = new peggy('someTemplate',sampleProdData);
 	frank = new peggy('someOtherTemplate',sampleProdData);
