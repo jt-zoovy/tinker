@@ -136,13 +136,13 @@ This one block should get called for both img and imageurl but obviously, imageu
 				argObj.mediaLibVars.src = this.makeImageURL(argObj.mediaLibVars);
 				}
 			}
-		else if(argObj.src.value)	{
+		else if(argObj.src && argObj.src.value)	{
 			//do nothing here, but is valid (don't get into 'else' error handling).
 			}
 		else	{
 			r = false;
 			//either media or src left blank. OR media is tru and the var specified doesn't exist. ### TODO -> handle this error.
-			console.log("Something was missing for apply_img.\if media.type ["+argObj.media.type+"] == 'variable' then binds[argObj.media.value] ["+binds[argObj.media.value]+"] must be set.\nor src ["+argObj.src+"] not specified on appy img OR media is set but binds["+argObj.media+"] ["+binds[argObj.media]+"} is not.");
+//			console.log("Something was missing for apply_img.\if media.type ["+argObj.media.type+"] == 'variable' then binds[argObj.media.value] ["+binds[argObj.media.value]+"] must be set.\nor src ["+argObj.src+"] not specified on appy img OR media is set but binds["+argObj.media+"] ["+binds[argObj.media]+"} is not.");
 			}
 
 		//to get here, the name is either imageurl or img.
@@ -235,7 +235,7 @@ This one block should get called for both img and imageurl but obviously, imageu
 //may be able to merge this with the handler_format. We'll see after the two are done and if the params passed into the functions are the same or no.
 // NOTE -> stopped on 'apply' for now. B is going to change the way the grammer hands back the response. Once he does that, I'll need to flatten the array into a hash to easily test if 'empty' or some other verb is set.
 	this.handler_apply = function(cmd,globals)	{
-//		console.log(" -> BEGIN handler_apply"); //console.dir(cmd);
+//		console.log(" -> BEGIN handler_apply"); console.dir(cmd);
 		var r = true;
 		if(cmd.module == 'core')	{
 			var argObj = this.args2obj(cmd.args); //an object is used to easily check if specific apply commands are present
@@ -285,11 +285,8 @@ This one block should get called for both img and imageurl but obviously, imageu
 		return r;
 		}
 
-
-
-
 	this.handler_BIND = function(cmd,globals)	{
-//		console.log("Now we bind"); console.dir(cmd);
+		console.log("Now we bind"); console.dir(cmd);
 		//scalar type means get the value out of the data object.
 		globals.binds[cmd.Set.value] = (cmd.Src.type == 'scalar') ? jsonPath(this.data, cmd.Src.value) : cmd.Src.value;
 		globals.focusBind = cmd.Set.value; // console.log(" -> globals.focusBind: "+globals.focusBind);
@@ -327,7 +324,6 @@ This one block should get called for both img and imageurl but obviously, imageu
 		console.warn(" -> NOT DONE YET ");
 		//this will backically instantate a new peggy (or whatever it's called)
 		}
-		
 
 	this.handler_is = function(cmd,globals)	{
 		var value = globals.binds[globals.focusBind], r = false;
@@ -397,7 +393,7 @@ This one block should get called for both img and imageurl but obviously, imageu
 			}
 		return value;
 		}
-	
+
 	this.handler_datetime = function(cmd,globals)	{
 
 		var value = globals.binds[globals.focusBind];
@@ -433,10 +429,9 @@ This one block should get called for both img and imageurl but obviously, imageu
 			focusBind : '', //the pointer to binds of the var currently in focus.
 			focusTag : '$tag' //the pointer to the tag that is currently in focus.
 			}
-			
 
 		for(var i = 0, L = commands.length; i < L; i += 1)	{
-//			console.log(i+") commands[i]: handler_"+commands[i].type); console.dir(commands[i]);
+			console.log(i+") commands[i]: handler_"+commands[i].type); console.dir(commands[i]);
 			if(commands[i].type == 'command')	{
 				try{
 					this['handler_'+commands[i].name](commands[i],globals);
@@ -445,7 +440,11 @@ This one block should get called for both img and imageurl but obviously, imageu
 					console.error("Attempted to execute a handler for "+commands[i].name+", which either does not exist or resulted in an error.",e);
 					}
 				}
+			else if(commands[i].type == 'IF')	{
+				
+				}
 			else if(commands[i].type == 'BIND')	{
+				
 				this['handler_BIND'](commands[i],globals);
 				}
 			else	{
@@ -550,8 +549,12 @@ $(function() {
 
 <textarea id='grammar' rows='20' cols='50' style='display:none;'>
 dataTLC
- = (IfStatement / BindStatement / command)+
-
+ = grammar+
+ 
+grammar
+ = IfStatement _ lb*
+ / BindStatement _ lb*
+ / command:(command) _ lb* { return command }
 
 // command name and module name must start with a letter or underscore
 command
@@ -719,6 +722,8 @@ _
 
 lb
  = ";"
+
+
 
 
 </textarea>
