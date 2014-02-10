@@ -16,6 +16,7 @@ var sampleProdData = {
 			"name" : "This is a product name.",
 			"base_price" : "5.23",
 			"is_new" : "1",
+			"is_four" : "4",
 			"prod_hash"  : {'key':'value','anotherkey':'anothervalue'},
 			"created" : 1391714080,
 			"prod_image1" : "181657/24255646",
@@ -75,7 +76,12 @@ var peggy = function(templateID, data)	{
 				}
 
 			if(commands && !$.isEmptyObject(commands))	{
-				_self.executeCommands($tag,commands);
+				_self.executeCommands(commands,{
+					tags : {
+						'$tag' : $tag
+						}, //an object of tags.
+					focusTag : '$tag' //the pointer to the tag that is currently in focus.
+					});
 				}
 			else	{
 				console.warn("couldn't parse a tlc");
@@ -168,6 +174,46 @@ This one block should get called for both img and imageurl but obviously, imageu
 		}
 
 
+	this.comparison = function(op,p1,p2)	{
+		var r = false;
+		switch(op)	{
+			case "eq":
+				if(p1 == p2){ r = true;} break;
+			case "ne":
+				if(p1 != p2){ r = true;} break;
+			case "gt":
+				if(Number(p1) > Number(p2)){r = true;} break;
+			case "lt":
+				if(Number(p1) < Number(p2)){r = true;} break;
+			case "true":
+				if(p1){r = true;}; break;
+			case "false":
+				if(!p1){r = true;}; break;
+			case "blank":
+				if(p1 == ''){r = true;}; break;
+			case "notblank":
+				if(!p1 || p1 == 0){r = true;}; break; //==, not ===, because zero could be passed in as a string.
+			case "null":
+				if(p1 == null){r = true;}; break;
+			case "notnull":
+				if(p1 != null){r = true;}; break;
+			case "regex":
+				var regex = new RegExp(p2);
+				if(regex.exec(p1))	{r = true;}
+				break;
+			case "notregex":
+				var regex = new RegExp(p2);
+				if(!regex.exec(p1))	{r = true;}
+				break;
+/*			case "and":
+				if(p1 != null){r = true;}; break; // ### TODO -> not done
+			case "or":
+				if(p1 != null){r = true;}; break; // ### TODO -> not done.
+*/			}
+		return r;
+		}
+
+
 
 /* //////////////////////////////     FORMATS	 \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\ */
 
@@ -204,12 +250,77 @@ This one block should get called for both img and imageurl but obviously, imageu
 			}
 		return r;
 		} //truncate
+	this.format_uriencode = function(arg,globals)	{
+		
+		// ### TODO -> this is not done yet.
+		} //truncate
 
 
 
-/* //////////////////////////////     HANDLERS		 \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\ */
+/* //////////////////////////////     TYPE HANDLERS		 \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\ */
 
-	this.handler_format = function(cmd,globals)	{
+/*
+There are a few 'types' that can be specified:
+BIND (setting a var)
+IF (conditional logic) 
+Block (set for the statements inside an IF IsTrue or IsFalse). contains an array of statements.
+command (everything else that's supported).
+*/
+
+	this.handleType_command = function(cmd,globals)	{
+//		console.log(" -> cmd: "); console.dir(cmd);
+		try{
+			this['handleCommand_'+cmd.name](cmd,globals);
+			}
+		catch(e){
+			console.error("Attempted to execute a handler for "+cmd.name+", which either does not exist or resulted in an error.");
+			console.log(e);
+			}
+		}
+
+	this.handleType_BIND = function(cmd,globals)	{
+//		console.log("Now we bind"); console.dir(cmd);
+		//scalar type means get the value out of the data object.
+		globals.binds[cmd.Set.value] = (cmd.Src.type == 'scalar') ? jsonPath(this.data, cmd.Src.value) : cmd.Src.value;
+		globals.focusBind = cmd.Set.value; // console.log(" -> globals.focusBind: "+globals.focusBind);
+		return cmd.Set.value;
+		}
+		
+	this.handleType_IF = function(cmd,globals)	{
+//		console.log("BEGIN handleIF"); console.dir(cmd);
+		var p1; //first param for comparison.
+		var args = cmd.When.args;
+		var action = 'IsTrue'; //will be set to false on first false (which exits loop);
+		//NOTE -> change '2' to args.length to support multiple args. ex: if (is $var --lt='100' --gt='5') {{ apply --append; }};
+		for(var i = 0, L = 2; i < L; i += 1)	{
+			if(args[i].type == 'variable')	{
+				p1 = globals.binds[args[i].value];
+				}
+			else	{
+				if(this.comparison(args[i].key,p1,(args[i].value && args[i].value) ? args[i].value.value : null))	{}
+				else {
+					action = 'IsFalse';
+					break;
+					}
+				}
+			}
+		if(cmd[action])	{
+//			console.log(' -> cmd[action]'); console.dir(cmd[action].statements[0]);
+			for(var i = 0, L = cmd[action].statements[0].length; i < L; i += 1)	{
+				this.executeCommands(cmd[action].statements[0][i],globals); // ### TODO -> the statements are being returned nested 1 level deep in an otherwise empty array. bug.
+				}
+			
+			}
+		else	{} //would get here if NOT true, but no isFalse was set. I guess technically you could also get here if isTrue and no isTrue set.
+		return (action == 'isTrue' ? true : false);
+		}
+
+
+
+
+/* //////////////////////////////     COMMAND HANDLERS		 \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\ */
+
+	this.handleCommand_format = function(cmd,globals)	{
 		var format = cmd.args[0].key, r;
 //		console.log(' -> cmd: '); console.dir(cmd);
 		if(cmd.module == 'core' && this['format_'+format])	{
@@ -232,22 +343,26 @@ This one block should get called for both img and imageurl but obviously, imageu
 		}
 
 //passing the command into this will verify that the apply exists (whether it be core or not)
-//may be able to merge this with the handler_format. We'll see after the two are done and if the params passed into the functions are the same or no.
+//may be able to merge this with the handleCommand_format. We'll see after the two are done and if the params passed into the functions are the same or no.
 // NOTE -> stopped on 'apply' for now. B is going to change the way the grammer hands back the response. Once he does that, I'll need to flatten the array into a hash to easily test if 'empty' or some other verb is set.
-	this.handler_apply = function(cmd,globals)	{
-//		console.log(" -> BEGIN handler_apply"); console.dir(cmd);
+	this.handleCommand_apply = function(cmd,globals)	{
+//		console.log(" -> BEGIN handleCommand_apply"); console.dir(cmd);
 		var r = true;
 		if(cmd.module == 'core')	{
 			var argObj = this.args2obj(cmd.args); //an object is used to easily check if specific apply commands are present
 			var $tag = globals.tags[globals.focusTag]; //shortcut. will work for all non 'img' based applies. img implicitly declares a tag.
+
+// ### TODO -> from here down needs to be changed.  only 1 verb is allowed by statement. loop through and look for more than 1 verb. If so, write 'ambiguous' error to console.	
+//if only one verb, execute it.		
+
 			if(argObj.empty)	{$tag.empty()}
 			if(argObj.hide)	{$tag.hide()}
 			if(argObj.show)	{$tag.show()}
 			if(argObj.remove)	{$tag.remove()}
 			if(argObj.add)	{} //###TODO -> what to do here?
-			
-			
-			
+
+// this would pass validation, but not be valid: bind $var '$.product.is_new';apply --add --class='xyz' --remove --tag='$tag';
+
 			if(argObj.attrib)	{
 				globals.tags[globals.focusTag].attr(argObj.attrib.value,globals.binds[globals.focusBind]);
 				}
@@ -265,12 +380,16 @@ This one block should get called for both img and imageurl but obviously, imageu
 					argObj._name = 'imageurl'; //let the img handler know if it's img or imageurl. underscore is present in case a 'name' attribute is ever added to image.
 					globals.binds[argObj.var] = this.apply_img($tag,argObj,globals.binds); //function returns an image url
 					}
+				if(argObj.replace)	{
+					$tag.replace(globals.binds[globals.focusBind]);
+					}
 				if(argObj.append)	{
 					$tag.append(globals.binds[globals.focusBind]);
 					}
 				if(argObj.prepend)	{
 					$tag.prepend(globals.binds[globals.focusBind]);
 					}
+				
 				}
 			}
 		else if(cmd.module && cmd.module.indexOf('#') >= 0)	{
@@ -285,15 +404,8 @@ This one block should get called for both img and imageurl but obviously, imageu
 		return r;
 		}
 
-	this.handler_BIND = function(cmd,globals)	{
-		console.log("Now we bind"); console.dir(cmd);
-		//scalar type means get the value out of the data object.
-		globals.binds[cmd.Set.value] = (cmd.Src.type == 'scalar') ? jsonPath(this.data, cmd.Src.value) : cmd.Src.value;
-		globals.focusBind = cmd.Set.value; // console.log(" -> globals.focusBind: "+globals.focusBind);
-		return cmd.Set.value;
-		}
 	
-	this.handler_render = function(cmd,globals){
+	this.handleCommand_render = function(cmd,globals){
 		var r, argObj = this.args2obj(cmd.args); //an object is used to easily check if specific apply commands are present
 //		console.log(" -> cmd: "); console.dir(cmd);
 		if(argObj.wiki)	{
@@ -315,59 +427,27 @@ This one block should get called for both img and imageurl but obviously, imageu
 		return r;
 		}
 		
-	this.handler_stringify = function(cmd,globals)	{
+	this.handleCommand_stringify = function(cmd,globals)	{
 		globals.binds[globals.focusBind] = JSON.stringify(globals.binds[globals.focusBind])
 		return globals.binds[globals.focusBind];
 		}
 
-	this.handler_transmogrify = function(cmd,globals)	{
+	this.handleCommand_transmogrify = function(cmd,globals)	{
 		console.warn(" -> NOT DONE YET ");
 		//this will backically instantate a new peggy (or whatever it's called)
 		}
 
-	this.handler_is = function(cmd,globals)	{
+	this.handleCommand_is = function(cmd,globals)	{
 		var value = globals.binds[globals.focusBind], r = false;
+		//### TODO -> this needs work. should set value to true or false.
 		for(var i = 0, L = cmd.args.length; i < L; i += 1)	{
-			switch(cmd.args[i].key)	{
-				case "eq":
-					if(value == cmd.args[i].value.value){ r = true;} break;
-				case "ne":
-					if(value != cmd.args[i].value.value){ r = true;} break;
-				case "gt":
-					if(Number(value) > Number(cmd.args[i].value.value)){r = true;} break;
-				case "lt":
-					if(Number(value) < Number(cmd.args[i].value.value)){r = true;} break;
-				case "true":
-					if(value){r = true;}; break;
-				case "false":
-					if(!value){r = true;}; break;
-				case "blank":
-					if(value == ''){r = true;}; break;
-				case "notblank":
-					if(!value || value == 0){r = true;}; break; //==, not ===, because zero could be passed in as a string.
-				case "null":
-					if(value == null){r = true;}; break;
-				case "notnull":
-					if(value != null){r = true;}; break;
-				case "regex":
-					var regex = new RegExp(cmd.args[i].value.value);
-					if(regex.exec(value))	{r = true;}
-					break;
-				case "notregex":
-					var regex = new RegExp(cmd.args[i].value.value);
-					if(!regex.exec(value))	{r = true;}
-					break;
-				case "and":
-					if(value != null){r = true;}; break; // ### TODO -> not done
-				case "or":
-					if(value != null){r = true;}; break; // ### TODO -> not done.
-				}
+			value = this.comparison(cmd.args[i].key,value,cmd.args[i].value.value);
 			}
 		globals.binds[globals.focusBind] = value;
 		return value;
 		}
 
-	this.handler_math = function(cmd,globals)	{
+	this.handleCommand_math = function(cmd,globals)	{
 		var value = Number(globals.binds[globals.focusBind]);
 		if(!isNaN(value))	{
 			for(var i = 0, L = cmd.args.length; i < L; i += 1)	{
@@ -389,19 +469,19 @@ This one block should get called for both img and imageurl but obviously, imageu
 			globals.binds[globals.focusBind] = value;
 			}
 		else	{
-			console.log(" -> handler_math was run on a value ["+globals.binds[globals.focusBind]+" which is not a number.");
+			console.log(" -> handleCommand_math was run on a value ["+globals.binds[globals.focusBind]+" which is not a number.");
 			}
 		return value;
 		}
 
-	this.handler_datetime = function(cmd,globals)	{
+	this.handleCommand_datetime = function(cmd,globals)	{
 
 		var value = globals.binds[globals.focusBind];
 		var argObj = this.args2obj(cmd.args), d = new Date(value*1000);
 
 
 		if(isNaN(d.getMonth()+1))	{
-			console.warn("In handler_datetime, value ["+value+"] is not a valid time format for Date()");
+			console.warn("In handleCommand_datetime, value ["+value+"] is not a valid time format for Date()");
 			}
 //### FUTURE
 //		else if(argObj.out-strftime)	{}
@@ -418,34 +498,29 @@ This one block should get called for both img and imageurl but obviously, imageu
 		globals.binds[globals.focusBind] = value;
 		return value;
 		}
-
-	this.executeCommands = function($tag,commands)	{
-//		console.log(" -> running peggyInstance.executeCommands");
-		var globals = {
+//can be triggered by translateTemplate OR by handleType_Block.
+	this.executeCommands = function(commands,globals)	{
+//		console.log(" -> running peggyInstance.executeCommands"); // console.dir(commands);
+		//make sure all the globals are defined. whatever is passed in will overwrite the defaults.
+		var theseGlobals = $.extend(true,{
 			binds : {}, //an object of all the binds set in args.
 			tags : {
-				'$tag' : $tag
+				'$tag' : ''
 				}, //an object of tags.
 			focusBind : '', //the pointer to binds of the var currently in focus.
 			focusTag : '$tag' //the pointer to the tag that is currently in focus.
-			}
+			},globals);
 
 		for(var i = 0, L = commands.length; i < L; i += 1)	{
-			console.log(i+") commands[i]: handler_"+commands[i].type); console.dir(commands[i]);
+//			console.log(i+") commands[i]: handleCommand_"+commands[i].type); //console.dir(commands[i]);
 			if(commands[i].type == 'command')	{
-				try{
-					this['handler_'+commands[i].name](commands[i],globals);
-					}
-				catch(e){
-					console.error("Attempted to execute a handler for "+commands[i].name+", which either does not exist or resulted in an error.",e);
-					}
+				this.handleType_command(commands[i],theseGlobals);
 				}
 			else if(commands[i].type == 'IF')	{
-				
+				this['handleType_IF'](commands[i],theseGlobals);
 				}
 			else if(commands[i].type == 'BIND')	{
-				
-				this['handler_BIND'](commands[i],globals);
+				this['handleType_BIND'](commands[i],theseGlobals);
 				}
 			else	{
 				//unrecognized type.
@@ -550,15 +625,14 @@ $(function() {
 <textarea id='grammar' rows='20' cols='50' style='display:none;'>
 dataTLC
  = grammar+
- 
-grammar
- = IfStatement _ lb*
- / BindStatement _ lb*
- / command:(command) _ lb* { return command }
 
-// command name and module name must start with a letter or underscore
+grammar
+ = cmd:(IfStatement) _ lb* { return cmd; }
+ / cmd:(BindStatement) _ lb* { return cmd; } 
+ / cmd:(command) _ lb* { return cmd; }
+
 command
- = _ module:([A-Za-z0-9_]+ "#")? cmd:[A-Za-z0-9_]+ args:((ws+ value)+)? _ lb* {
+ = _ module:([a-z_]+ "#")? cmd:[a-z?]+ args:((ws+ value)+)? _ lb* {
      return {
        type: "command",
        module: module ? module[0].join("") : "core",
@@ -569,34 +643,34 @@ command
 
 
 // ** BIND **
-// bind $var 'something';    (jsonpath lookup)
-// bind $var $someothervar;  (jsonpath lookup)
-// bind $var ~tag;           (returns tag id/path)
-// bind ~tag '#tagid';       jQuery('#tagid')
-// bind ~tag $tagid          jQuery($tagid)
+// bind $var 'something'; (jsonpath lookup)
+// bind $var $someothervar; (jsonpath lookup)
+// bind $var ~tag; (returns tag id/path)
+// bind ~tag '#tagid'; jQuery('#tagid')
+// bind ~tag $tagid jQuery($tagid)
 BindStatement
  = "bind" _ set:(variable / tag) _ src:(variable / scalar / tag) _ lb+ {
-  return { type:"BIND", Set:set, Src:src } 
+  return { type:"BIND", Set:set, Src:src }
   }
 
 
 
 IfStatement
   = "if" _ "(" _ condition:command _ ")" _ ifStatement:Block elseStatement:(_ "else" _ Block)? _ lb+ {
-      return {
-        type:     "IF",
-        When:     condition,
-        IsTrue:   ifStatement,
+      return ({
+        type: "IF",
+        When: condition,
+        IsTrue: ifStatement,
         IsFalse: elseStatement !== null ? elseStatement[3] : null
-      };
+      });
    }
 
 
 Block
   = "{{" _ statements:(StatementList _)? "}}" {
       return {
-        type:       "Block",
-        statements: statements !== null ? statements[0] : []
+        type: "Block",
+        statements: statements !== null ? statements : []
       };
     }
 
@@ -619,19 +693,19 @@ Statement
 /* value types */
 
 // ~tag is a reference to a jquery object
-tag 
- = "~" tag:([a-zA-Z0-9\-_]+) {
+tag
+ = "~" tag:([a-zA-Z]+) {
    // tag table should maintain reference to tags on DOM
-   return { type:"tag", value:tag.join(""), jq:null }
+   return { type:"tag", tag:tag.join(""), jq:null }
    }
 
-boolean 
+boolean
  = "true" {return{ "type":"boolean", "value": true }}
  / "false" {return{ "type":"boolean", "value": false }}
 
 // longopt start with a --
 longopt
- = "--" k:([a-zA-Z]+) "=" v:( value )  {
+ = "--" k:([a-zA-Z]+) "=" v:( value ) {
     return {
        type: "longopt",
        key: k.join(""),
@@ -649,53 +723,53 @@ longopt
 
 // scalar (string)
 // NOTE: at this point there is no way to escape a ' in a string.
-// 
+//
 scalar
  = "'" v:([^']*) "'" {
-     return { 
+     return {
        type: "scalar",
        value: v.join("")
-     } 
+     }
    }
 
 // Variables can't start with a number
 variable
- = "$" v:([a-zA-Z0-9_]*) { 
-     return { 
+ = "$" v:([a-zA-Z0-9_]*) {
+     return {
        type: "variable",
        value: v.join("")
-     } 
+     }
    }
 
 integer
-  = digits:[0-9]+ { 
-      return { 
-        type: "integer", 
-        value: parseInt(digits.join(""), 10) 
+  = digits:[0-9]+ {
+      return {
+        type: "integer",
+        value: parseInt(digits.join(""), 10)
       }
     }
 
-hexcolor 
+hexcolor
   = "#" v:([A-Fa-f0-9][A-Fa-f0-9][A-Fa-f0-9][A-Fa-f0-9][A-Fa-f0-9][A-Fa-f0-9]) {
-     return { type:"hexcolor", value: v.join("")  }
+     return { type:"hexcolor", value: v.join("") }
      }
 
 additive
-  = left:muldiv _ sign:[+-] _ right:additive { 
-      return { 
-        type: "command", 
-        name:sign, 
-        args:[left,right] 
+  = left:muldiv _ sign:[+-] _ right:additive {
+      return {
+        type: "command",
+        name:sign,
+        args:[left,right]
       }
     }
   / muldiv
 
 muldiv
   = left:primary _ sign:[*/] _ right:muldiv {
-      return { 
-        type: "command", 
-        name: sign, 
-        args:[left, right] 
+      return {
+        type: "command",
+        name: sign,
+        args:[left, right]
       }
     }
   / primary
@@ -705,7 +779,7 @@ primary
   / "(" _ additive:additive _ ")" { return additive; }
 
 value
- = longopt / variable / integer / scalar / boolean / tag / hexcolor / additive 
+ = longopt / variable / integer / scalar / boolean / tag / hexcolor / additive
 
 // /* i am a comment (i can only appear before a command) */
 comment
@@ -722,10 +796,6 @@ _
 
 lb
  = ";"
-
-
-
-
 </textarea>
 
 
@@ -741,6 +811,21 @@ lb
 	<div data-tlc="bind $var '$.product.prod_desc'; format --truncate=250; apply --append;"></div><br />
 	<div data-tlc="bind $var '$.product.prod_hash'; stringify $var; apply --append;">Stringify: </div>
 	<div data-tlc="bind $var '$.product.base_price'; apply --attrib='data-garbage';">should have data-garbage set</div>
+	
+	<div data-tlc="bind $var '$.product.base_price';if (is $var --lt='100' --gt='2') {{ apply --show; }};"></div>
+	<div style='display:none;' data-tlc="bind $var '$.product.is_new';if (is $var --eq='1') {{ apply --show; }};">This should be visible</div>
+	<div style='display:none;' data-tlc="bind $var '$.product.is_new';if (is $var --ne='2') {{ apply --hide; }};">This should be hidden</div>
+	
+	<select name='alfred' data-tlc="bind $var '$.product.is_four'; apply ~tag --show;">
+		<option value='1'>1</option>
+		<option value='2'>2</option>
+		<option value='3'>3</option>
+		<option value='4'>4</option>
+		<option value='5'>5</option>
+		<option value='6'>6</option>
+	</select>
+	
+	
 </div>
 
 <div id='someOtherTemplate' data-tlc="bind $var '$.product.prod_name'; tag --overwrite;">

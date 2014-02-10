@@ -59,9 +59,8 @@ var router = {
 			}
 		return r;
 		},
-		
 
-		
+
 	//proper way to add an alias. will have validation.
 	addAlias : function(name,callback)	{
 		if(name && callback)	{
@@ -84,6 +83,7 @@ var router = {
 			}
 		return vars;
 		},
+
 //The route type functions all get passed the same vars, routeObj and hash.
 //the function should return false is the hash does not match the route.
 //the function should return an object if a match is 
@@ -233,6 +233,7 @@ var router = {
 
 
 router.appendHash({'type':'match','route':'product/{{pid}}','callback':'product'});
+router.appendHash({'type':'match','route':'product/{{pid}}*','callback':'product'});
 router.appendHash({'type':'exact','route':'company','callback':'company'});
 router.appendHash({
 	'type':'regexp',
