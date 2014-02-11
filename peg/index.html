@@ -12,7 +12,7 @@
 
 var templates = {};
 var sampleProdData = {
-		"product" : {
+		"%attribs" : {
 			"name" : "This is a product name.",
 			"base_price" : "5.23",
 			"is_new" : "1",
@@ -373,8 +373,9 @@ command (everything else that's supported).
 			this['handleCommand_'+cmd.name](cmd,globals);
 			}
 		catch(e){
-			console.error("Attempted to execute a handler for "+cmd.name+", which either does not exist or resulted in an error.");
+//			console.error("Attempted to execute a handler for "+cmd.name+", which either does not exist or resulted in an error.");
 			console.log(e);
+			console.dir(cmd);
 			}
 		}
 
@@ -534,7 +535,7 @@ command (everything else that's supported).
 
 	this.handleCommand_transmogrify = function(cmd,globals)	{
 //		console.log(" ->>>>>>> templateID: "+cmd.args[0].value); //console.dir(this.args2obj(cmd.args));
-		var tmp = new peggy(((cmd.args[0].type == 'scalar') ? jsonPath(this.data, cmd.args[0].value) : cmd.args[0].value),this.data);
+		var tmp = new peggy(cmd.args[0].value,this.data);
 		globals.tags[globals.focusTag].append(tmp.runTLC());
 		//this will backically instantate a new peggy (or whatever it's called)
 		}
@@ -904,31 +905,31 @@ lb
 
 <div id='someTemplate'>
 
-	<img data-tlc="bind $var '.product.prod_image1'; apply --img --media=$var --width=100 --height=100 --bgcolor='#000000' --replace;" />
-	<h1 data-tlc="bind $var '.product.name'; format --append=' - thats right! '; apply --append;"></h1>
-	<h2 data-tlc="bind $var '.product.base_price'; format --currency='USD';  format --prepend='price tag: '; apply --append;"></h2>
-	<h5 data-tlc="bind $var '.product.base_price'; math --add=20 --sub=10 --precision=0 --mult=3; format --currency='USD';  format --prepend='Fake msrp: '; apply --append;"></h5>
-	<h3 data-tlc="bind $var '.product.created'; datetime --out='pretty'; apply --append;"></h3><br />
+	<img data-tlc="bind $var '.%attribs.prod_image1'; apply --img --media=$var --width=100 --height=100 --bgcolor='#000000' --replace;" />
+	<h1 data-tlc="bind $var '.%attribs.name'; format --append=' - thats right! '; apply --append;"></h1>
+	<h2 data-tlc="bind $var '.%attribs.base_price'; format --currency='USD';  format --prepend='price tag: '; apply --append;"></h2>
+	<h5 data-tlc="bind $var '.%attribs.base_price'; math --add=20 --sub=10 --precision=0 --mult=3; format --currency='USD';  format --prepend='Fake msrp: '; apply --append;"></h5>
+	<h3 data-tlc="bind $var '.%attribs.created'; datetime --out='pretty'; apply --append;"></h3><br />
 
 	<section data-tlc="transmogrify 'someOtherTemplate';"></section>
 
-	<div data-tlc="bind $var '.product.prod_desc'; format --truncate=250; apply --append;"></div><br />
-	<div data-tlc="bind $var '.product.prod_hash'; stringify $var; apply --append;">Stringify: </div>
-	<div data-tlc="bind $var '.product.base_price'; apply --attrib='data-garbage';">should have data-garbage set</div>
+	<div data-tlc="bind $var '.%attribs.prod_desc'; format --truncate=250; apply --append;"></div><br />
+	<div data-tlc="bind $var '.%attribs.prod_hash'; stringify $var; apply --append;">Stringify: </div>
+	<div data-tlc="bind $var '.%attribs.base_price'; apply --attrib='data-garbage';">should have data-garbage set</div>
 	
-	<div data-tlc="bind $var '.product.base_price';if (is $var --lt='100' --gt='2') {{ apply --show; }};"></div>
-	<div style='display:none;' data-tlc="bind $var '.product.is_new';if (is $var --eq='1') {{ apply --show; }};">This should be visible</div>
-	<div style='display:none;' data-tlc="bind $var '.product.is_new';if (is $var --ne='2') {{ apply --hide; }};">This should be hidden</div>
+	<div data-tlc="bind $var '.%attribs.base_price';if (is $var --lt='100' --gt='2') {{ apply --show; }};"></div>
+	<div style='display:none;' data-tlc="bind $var '.%attribs.is_new';if (is $var --eq='1') {{ apply --show; }};">This should be visible</div>
+	<div style='display:none;' data-tlc="bind $var '.%attribs.is_new';if (is $var --ne='2') {{ apply --hide; }};">This should be hidden</div>
 
 	<fieldset>
 		<legend>Checkbox testing</legend>
-		<div><input type='checkbox'  data-tlc="bind $var '.product.is_four'; apply --select;" name='checkbox' />This is a checkbox (should be checked)</div>
-		<div><input type='checkbox'  data-tlc="bind $var '.product.is_nada'; apply --select;" checked="checked" name='checkbox' />This is a checkbox (should NOT be checked)</div>
+		<div><input type='checkbox'  data-tlc="bind $var '.%attribs.is_four'; apply --select;" name='checkbox' />This is a checkbox (should be checked)</div>
+		<div><input type='checkbox'  data-tlc="bind $var '.%attribs.is_nada'; apply --select;" checked="checked" name='checkbox' />This is a checkbox (should NOT be checked)</div>
 	</fieldset>
 
 	<fieldset>
 		<legend>All these inputs should be set to 4</legend>
-	<select name='alfred' data-tlc="bind $var '.product.is_four'; apply ~tag --select;">
+	<select name='alfred' data-tlc="bind $var '.%attribs.is_four'; apply ~tag --select;">
 		<option value='1'>1</option>
 		<option value='2'>2</option>
 		<option value='3'>3</option>
@@ -939,21 +940,19 @@ lb
 	<br />
 	
 
-	<div><input type='text'  data-tlc="bind $var '.product.is_four'; apply ~tag --select;" name='textInput' size='3' />Text input</div>
+	<div><input type='text'  data-tlc="bind $var '.%attribs.is_four'; apply ~tag --select;" name='textInput' size='3' />Text input</div>
 	
 	<br />
 	
-	<div><input type='radio' name='something' value='2' data-tlc="bind $var '.product.is_four'; apply ~tag --select;" />two</div>
-	<div><input type='radio' name='something' value='4' data-tlc="bind $var '.product.is_four'; apply ~tag --select;" />four</div>
-	<div><input type='radio' name='something' value='6' data-tlc="bind $var '.product.is_four'; apply ~tag --select;" />six</div>
+	<div><input type='radio' name='something' value='2' data-tlc="bind $var '.%attribs.is_four'; apply ~tag --select;" />two</div>
+	<div><input type='radio' name='something' value='4' data-tlc="bind $var '.%attribs.is_four'; apply ~tag --select;" />four</div>
+	<div><input type='radio' name='something' value='6' data-tlc="bind $var '.%attribs.is_four'; apply ~tag --select;" />six</div>
 	</fieldset>
 </div>
 
-<div id='someOtherTemplate' data-tlc="bind $var '.product.prod_name'; tag --overwrite;" style='background-color:green;'>
+<div id='someOtherTemplate' style='background-color:green;'>
 	HELLO WORLD!
-	<h3 data-tlc="bind $var '.product.prod_msrp'; tag --overwrite;">Lorem Ispsum Producismo Namola</h3>
-	<img data-tlc="bind $var '.product.prod_image1'; apply --img --media=$var --width=100 --height=100 --bgcolor='#000'  --append;" />
-	<div data-tlc="bind $var '.product.prod_desc'; tag --overwrite;"></div>
+	<div data-tlc="bind $var '.%attribs.prod_desc'; format --truncate=250; apply --append;"></div><br />
 </div>
 
 
