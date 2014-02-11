@@ -50,7 +50,7 @@ apply is processed in a specific order. empty, then remove, then 'magic' (images
 //interpolates all data-tlc on that template.
 //returns the template.
 var peggy = function(templateID, data)	{
-
+	console.log(" -> templateID: "+templateID);
 	this.templateID = templateID;
 	this.data = data;
 
@@ -58,21 +58,23 @@ var peggy = function(templateID, data)	{
 	this.buildErrorMessage = function(e) {
 		return e.line !== undefined && e.column !== undefined ? "Line " + e.line + ", column " + e.column + ": " + e.message : e.message;
 		}
+
 //This is where the magic happens. Run this and the translated template will be returned.
-	this.translateTemplate = function()	{
+	this.runTLC = function()	{
+		var startTime = new Date().getTime(); console.log("BEGIN runTLC: "+startTime); // ### TESTING -> this is not necessary for deployment.
+		
 		var _self = this; //'this' context is lost within each loop.
 		var $t = window.templates[templateID].clone();
-//		console.log(" -> running peggyInstance.translateTemplate. data-tlc.length: "+$("[data-tlc]",$t).length);
+//		console.log(" -> running peggyInstance.runTLC. data-tlc.length: "+$("[data-tlc]",$t).length);
 		$("[data-tlc]",$t).addBack("[data-tlc]").each(function(index,value){
 			var $tag = $(this), tlc = $tag.data('tlc');
-			console.log("----------------> start new $tag <-----------------");
+//			console.log("----------------> start new $tag <-----------------");
 			var commands = false;
 			try{
 				commands = window.pegParser.parse(tlc);
 				}
 			catch(e)	{
 				console.log(self.buildErrorMessage(e));
-//				console.log("attempt to run parse on "+tlc+" failed w/ the following error(s):");
 				}
 
 			if(commands && !$.isEmptyObject(commands))	{
@@ -87,10 +89,11 @@ var peggy = function(templateID, data)	{
 				console.warn("couldn't parse a tlc");
 				//could not parse tlc. error already reported.
 				}
-			console.log("----------------> end $tag <-----------------");
+//			console.log("----------------> end $tag <-----------------");
 			});
+		console.log("END runTLC: "+(new Date().getTime() - startTime)+" milliseconds");
 		return $t;
-		} //translateTemplate
+		} //runTLC
 
 //used in 'apply' and possibly elsewhere. changes the args arrays into a single object for easy lookup.
 	this.args2obj = function(args)	{
@@ -109,28 +112,37 @@ var peggy = function(templateID, data)	{
 		return "http://www.sporks.zoovy.com/media/img/-/"+url.substr(1); //### TODO -> obviously, we don't want sporks info in URL.
 		}
 
-
-
 /*
-//apply_img is executed in the apply_handler.
+This should return an img tag OR the url, based on whether the formatter is img or imageurl
 'media' -> generate a media library instance for the var passed.
 'src' -> use the value passed (/some/image/path.jpg)
-
-img
+The tag passed in will either be focusTag OR the $tag passed in.
+	-> here, the tag can be used for read only purposes. The 'verb' handles updating the tag.
 if neither media or src, something is amiss.
 This one block should get called for both img and imageurl but obviously, imageurl only returns the url.
 */
-	this.apply_img = function($tag,argObj,binds)	{
+	this.apply_formatter_img = function(formatter,$tag,argObj,globals)	{
 		var r = true,filePath;
 		argObj.media = argObj.media || {};
-		if(argObj.media.type == 'variable' && binds[argObj.media.value])	{
+		var mediaParams;
+		if(argObj.media.type == 'variable' && globals.binds[argObj.media.value])	{
 			//build filepath for media lib
+			//default = true is use focusTag. default = $tag says to use another, already defined, tag so focus shifts within this function, but focusTag does NOT change.
+			if(typeof argObj.default === 'string')	{
+				if(globals.tags[argObj.default])	{
+					$tag = globals.tags[argObj.default]
+					}
+				else	{
+					console.warn("Formatter img/imageurl specified "+argObj.default+" as the tag src, but that tag has not been defined");
+					}
+				}
+
 			if(argObj.default)	{
 				console.log(" -> use attributes of tag to build image path");
 				//here need to check if default is set to a tag. not sure how, docs are not specific.
 				if($tag.is('img'))	{
-					argObj.mediaLibVars = {'width':$tag.attr('width'),'height':$tag.attr('height'),'data-bgcolor':$tag.data('bgcolor'),'data-minimal':$tag.data('minimal'),'data-filename':binds[argObj.media]};
-					argObj.mediaLibVars.src = this.makeImageURL(argObj.mediaLibVars);
+					mediaParams = {'width':$tag.attr('width'),'height':$tag.attr('height'),'data-bgcolor':$tag.data('bgcolor'),'data-minimal':$tag.data('minimal'),'data-filename':globals.binds[argObj.media]};
+					filePath = this.makeImageURL(mediaParams);
 					}
 				else	{
 					r = false;
@@ -138,8 +150,8 @@ This one block should get called for both img and imageurl but obviously, imageu
 					}
 				}
 			else	{
-				argObj.mediaLibVars = {'width':argObj.width.value,'height':argObj.height.value,'data-bgcolor':argObj.bgcolor.value,'data-minimal':(argObj.minimal ? argObj.minimal.value : 0),'data-filename':binds[argObj.media.value]}
-				argObj.mediaLibVars.src = this.makeImageURL(argObj.mediaLibVars);
+				mediaParams = {'width':argObj.width.value,'height':argObj.height.value,'data-bgcolor':argObj.bgcolor.value,'data-minimal':(argObj.minimal ? argObj.minimal.value : 0),'data-filename':globals.binds[argObj.media.value]};
+				filePath = this.makeImageURL(mediaParams);
 				}
 			}
 		else if(argObj.src && argObj.src.value)	{
@@ -147,32 +159,116 @@ This one block should get called for both img and imageurl but obviously, imageu
 			}
 		else	{
 			r = false;
-			//either media or src left blank. OR media is tru and the var specified doesn't exist. ### TODO -> handle this error.
-//			console.log("Something was missing for apply_img.\if media.type ["+argObj.media.type+"] == 'variable' then binds[argObj.media.value] ["+binds[argObj.media.value]+"] must be set.\nor src ["+argObj.src+"] not specified on appy img OR media is set but binds["+argObj.media+"] ["+binds[argObj.media]+"} is not.");
+			//either media or src left blank. OR media is tru and the var specified doesn't exist.
+			console.log("Something was missing for apply_img.\if media.type == 'variable' then globals.binds[argObj.media.value] must be set.\nor src ["+argObj.src+"] not specified on appy img OR media is set but globals.binds["+argObj.media+"] ["+globals.binds[argObj.media]+"} is not.");
 			}
 
-		//to get here, the name is either imageurl or img.
-//		console.log(" -> argObj._name: "+argObj._name);
-		//it's anticipated that _name == img on an img tag will be the highest use case for this.
-		if($tag.is('img') && argObj._name == 'img')	{
-			$tag.attr(argObj.mediaLibVars);
-			r = $tag;
+		if(filePath && formatter == 'img')	{
+			var $tmp = $("<div \/>").append($("<img \/>").attr(mediaParams).attr('src',filePath));
+			r = $tmp.html();
 			}
-		else if(argObj._name == 'imageurl')	{r = filePath; console.log(' -> imageurl')}
-		else	{
-			if(argObj._name == 'img' && argObj.append)	{
-				$tag.append($("<img>").attr(argObj.mediaLibVars));
-				}
-			if(argObj._name == 'img' && argObj.prepend)	{
-				$tag.prepend($("<img>").attr(argObj.mediaLibVars));
-				}
-			r = $tag;
+		else if(filePath)	{
+			r = filePath;
 			}
-		
-//		console.log(" -> _name: "+argObj._name+" r: "+r);
+		else	{} //some error occured. should have already been written to console by now.
+
 		return r;
 		}
+	
+	this.apply_verb_select = function($tag,argObj,globals)	{
+		var dataValue = globals.binds[globals.focusBind]; //shortcut.
+		if($tag.is(':checkbox'))	{
+			if(dataValue == "" || Number(dataValue) === 0)	{
+				$tag.prop({'checked':false,'defaultChecked':false}); //have to handle unchecking in case checked=checked when template created.
+				}
+			else	{
+//the value here could be checked, on, 1 or some other string. if the value is set (and we won't get this far if it isn't), check the box.
+				$tag.prop({'checked':true,'defaultChecked':true});
+				}
+			}
+		else if($tag.is(':radio'))	{
+//with radio's the value passed will only match one of the radios in that group, so compare the two and if a match, check it.
+			if($tag.val() == dataValue)	{$tag.prop({'checked':true,'defaultChecked':true})}
+			}
+		else if($tag.is('select') && $tag.attr('multiple') == 'multiple')	{
+			if(typeof dataValue === 'object')	{
+				var L = dataValue.length;
+				for(var i = 0; i < L; i += 1)	{
+					$('option[value="' + dataValue[i] + '"]',$tag).prop({'selected':'selected','defaultSelected':true});
+					}
+				}
+			}
+		else	{
+			$tag.val(dataValue);
+			$tag.prop('defaultValue',dataValue); //allows for tracking the difference onblur.
+			}
+		}
 
+	this.handle_apply_verb = function(verb,$tag,argObj,globals){
+		switch(verb)	{
+//new Array('empty','hide','show','add','remove','prepend','append','replace','input-value','select','state','attrib'),
+			case 'empty': $tag.empty(); break;
+			case 'hide': $tag.hide(); break;
+			case 'show': $tag.show(); break;
+
+			//add and remove work w/ either 'tag' or 'class'.
+			case 'add' : 
+				if(argObj.class)	{$tag.addClass(argObj.class)}
+				else if(argObj.tag)	{
+					// ### TODO -> not done yet. what to do? add a tag? what tag? where does it come from?
+					}
+				break; 
+			case 'remove':
+				if(argObj.class)	{$tag.removeClass(argObj.class)}
+				else if(argObj.tag)	{
+					$tag.remove();
+					}
+				else	{
+					console.warn("For apply, the verb was set to remove, but neither a tag or class were defined. argObj follows:"); console.dir(argObj);
+					}
+				break; 
+			
+			case 'prepend': $tag.prepend(globals.binds[globals.focusBind]); break;
+			case 'append': $tag.append(globals.binds[globals.focusBind]); break;
+			case 'replace': $tag.replaceWith(globals.binds[globals.focusBind]); break;
+			case 'input-value':
+				$tag.val(globals.binds[globals.focusBind]);
+				break;
+			case 'select' :
+				this.apply_verb_select($tag,argObj,globals); //will modify $tag.
+				break;
+			case 'state' :
+				// ### TODO -> not done yet.
+				break;  
+			case 'attrib':
+				$tag.attr(argObj.attrib.value,globals.binds[globals.focusBind]);
+				break;
+			}
+		}
+
+	this.handle_apply_formatter = function(formatter,$tag,argObj,globals)	{
+		switch(formatter)	{
+			case 'text':
+				if(globals.binds[argObj.text])	{
+					var $tmp = $("<div>").append(globals.binds[argObj.text]);
+					globals.binds[argObj.text] = $tmp.text();
+					globals.focusBind = argObj.text;
+					}
+				else	{
+					console.warn("For command "+cmd+" formatter set to text but scalar passed is not defined in globals.binds");
+					}
+				break;
+			case 'html':
+				globals.focusBind = argObj.html;
+				break;
+			case 'img':
+				globals.binds[globals.focusBind] = this.apply_formatter_img(formatter,$tag,argObj,globals);
+				break;
+			case 'imageurl':
+				globals.binds[globals.focusBind] = this.apply_formatter_img(formatter,$tag,argObj,globals); //function returns an image url
+				break;
+			}
+		}
 
 	this.comparison = function(op,p1,p2)	{
 		var r = false;
@@ -205,10 +301,13 @@ This one block should get called for both img and imageurl but obviously, imageu
 				var regex = new RegExp(p2);
 				if(!regex.exec(p1))	{r = true;}
 				break;
+// and/or allow commands to be chained.
+//--and (FUTURE) -> this is for chaining, so if and is present, 1 false = IsFalse.
+//--or (FUTURE) -> this is for chaining, so if and is present, 1 true = IsTrue.
 /*			case "and":
-				if(p1 != null){r = true;}; break; // ### TODO -> not done
+				if(p1 != null){r = true;}; break; // ### FUTURE -> not done
 			case "or":
-				if(p1 != null){r = true;}; break; // ### TODO -> not done.
+				if(p1 != null){r = true;}; break; // ### FUTURE -> not done.
 */			}
 		return r;
 		}
@@ -236,7 +335,7 @@ This one block should get called for both img and imageurl but obviously, imageu
 		} //append
 	this.format_truncate = function(arg,globals)	{
 		var
-			r = globals.binds[globals.focusBind].toString(); //what is returned. Either original value passed in or a truncated version of it.
+			r = globals.binds[globals.focusBind].toString(), //what is returned. Either original value passed in or a truncated version of it.
 			len = arg.value.value;
 		if(!len || isNaN(len)){}
 		else if(r.length <= len){}
@@ -251,8 +350,9 @@ This one block should get called for both img and imageurl but obviously, imageu
 		return r;
 		} //truncate
 	this.format_uriencode = function(arg,globals)	{
-		
-		// ### TODO -> this is not done yet.
+		var r = encodeURI(globals.binds[globals.focusBind]);
+		globals.binds[globals.focusBind] = r
+		return r;
 		} //truncate
 
 
@@ -268,7 +368,7 @@ command (everything else that's supported).
 */
 
 	this.handleType_command = function(cmd,globals)	{
-//		console.log(" -> cmd: "); console.dir(cmd);
+//		console.log(" -> cmd.name: "+cmd.name); // console.dir(cmd);
 		try{
 			this['handleCommand_'+cmd.name](cmd,globals);
 			}
@@ -281,11 +381,11 @@ command (everything else that's supported).
 	this.handleType_BIND = function(cmd,globals)	{
 //		console.log("Now we bind"); console.dir(cmd);
 		//scalar type means get the value out of the data object.
-		globals.binds[cmd.Set.value] = (cmd.Src.type == 'scalar') ? jsonPath(this.data, cmd.Src.value) : cmd.Src.value;
+		globals.binds[cmd.Set.value] = (cmd.Src.type == 'scalar') ? jsonPath(this.data, '$'+cmd.Src.value) : cmd.Src.value;
 		globals.focusBind = cmd.Set.value; // console.log(" -> globals.focusBind: "+globals.focusBind);
 		return cmd.Set.value;
 		}
-		
+	
 	this.handleType_IF = function(cmd,globals)	{
 //		console.log("BEGIN handleIF"); console.dir(cmd);
 		var p1; //first param for comparison.
@@ -346,51 +446,51 @@ command (everything else that's supported).
 //may be able to merge this with the handleCommand_format. We'll see after the two are done and if the params passed into the functions are the same or no.
 // NOTE -> stopped on 'apply' for now. B is going to change the way the grammer hands back the response. Once he does that, I'll need to flatten the array into a hash to easily test if 'empty' or some other verb is set.
 	this.handleCommand_apply = function(cmd,globals)	{
-//		console.log(" -> BEGIN handleCommand_apply"); console.dir(cmd);
+//		console.log(" -> BEGIN handleCommand_apply");// console.dir(cmd);
 		var r = true;
 		if(cmd.module == 'core')	{
-			var argObj = this.args2obj(cmd.args); //an object is used to easily check if specific apply commands are present
-			var $tag = globals.tags[globals.focusTag]; //shortcut. will work for all non 'img' based applies. img implicitly declares a tag.
+			var
+				verbs = new Array('empty','hide','show','add','remove','prepend','append','replace','input-value','select','state','attrib'),
+				formatters = new Array('img','imageurl','text','html'),
+				argObj = this.args2obj(cmd.args), //an object is used to easily check if specific apply commands are present
+				$tag = globals.tags[(argObj.tag || globals.focusTag)],
+				numVerbs = 0, numFormatters = 0, theVerb = null, theFormatter = null;
 
-// ### TODO -> from here down needs to be changed.  only 1 verb is allowed by statement. loop through and look for more than 1 verb. If so, write 'ambiguous' error to console.	
-//if only one verb, execute it.		
-
-			if(argObj.empty)	{$tag.empty()}
-			if(argObj.hide)	{$tag.hide()}
-			if(argObj.show)	{$tag.show()}
-			if(argObj.remove)	{$tag.remove()}
-			if(argObj.add)	{} //###TODO -> what to do here?
-
-// this would pass validation, but not be valid: bind $var '$.product.is_new';apply --add --class='xyz' --remove --tag='$tag';
-
-			if(argObj.attrib)	{
-				globals.tags[globals.focusTag].attr(argObj.attrib.value,globals.binds[globals.focusBind]);
-				}
-
-//images get their own special handling.
-			if(argObj.img)	{
-				argObj._name = 'img'; //let the img handler know if it's img or imageurl. underscore is present in case a 'name' attribute is ever added to image.
-				globals.tags[globals.focusTag] = this.apply_img($tag,argObj,globals.binds);
-				}
-			else if(argObj['input-value'])	{
-				// ### TODO -> set tag value='' (for input tags)
-				}
-			else	{
-				if(argObj.imageurl)	{
-					argObj._name = 'imageurl'; //let the img handler know if it's img or imageurl. underscore is present in case a 'name' attribute is ever added to image.
-					globals.binds[argObj.var] = this.apply_img($tag,argObj,globals.binds); //function returns an image url
+			//count the number of verbs.  Only 1 is allowed.
+			for(var index in argObj)	{
+				if($.inArray(index,verbs) >= 0)	{
+					theVerb = index;
+					numVerbs++;
 					}
-				if(argObj.replace)	{
-					$tag.replace(globals.binds[globals.focusBind]);
+				else if($.inArray(index,formatters) >= 0)	{
+					theFormatter = index;
+					numFormatters++;
 					}
-				if(argObj.append)	{
-					$tag.append(globals.binds[globals.focusBind]);
+				else	{
+					//okay to get here. likely just some argument for the verb or formatter
 					}
-				if(argObj.prepend)	{
-					$tag.prepend(globals.binds[globals.focusBind]);
+				}
+			
+//			console.log("numVerbs: "+numVerbs+" theVerb: "+theVerb+" theFormat: "+theFormatter+" numFormats: "+numFormatters);
+			//formatter is optional, but only 1 can be specified.
+			if(numVerbs === 1 && numFormatters <= 1)	{
+
+				if(theFormatter)	{
+//					console.log(" -> a formatter ["+theFormatter+"] is set. process that first.");
+					this.handle_apply_formatter(theFormatter,$tag,argObj,globals);
 					}
 				
+				this.handle_apply_verb(theVerb,$tag,argObj,globals);
+
 				}
+			else if(numVerbs === 0)	{
+				console.warn("For command: "+cmd+" no verb was specified on the apply. Exactly 1 verb must be specified.");
+				}
+			else	{
+				console.warn("For command (below) either more than 1 verb or more than 1 formatter was specified on the apply. Exactly 1 of each is allowed per command.");
+				console.dir(cmd);
+				}
+
 			}
 		else if(cmd.module && cmd.module.indexOf('#') >= 0)	{
 			console.log(" -> non 'core' based apply. not handled yet");
@@ -433,13 +533,14 @@ command (everything else that's supported).
 		}
 
 	this.handleCommand_transmogrify = function(cmd,globals)	{
-		console.warn(" -> NOT DONE YET ");
+//		console.log(" ->>>>>>> templateID: "+cmd.args[0].value); //console.dir(this.args2obj(cmd.args));
+		var tmp = new peggy(((cmd.args[0].type == 'scalar') ? jsonPath(this.data, cmd.args[0].value) : cmd.args[0].value),this.data);
+		globals.tags[globals.focusTag].append(tmp.runTLC());
 		//this will backically instantate a new peggy (or whatever it's called)
 		}
 
 	this.handleCommand_is = function(cmd,globals)	{
 		var value = globals.binds[globals.focusBind], r = false;
-		//### TODO -> this needs work. should set value to true or false.
 		for(var i = 0, L = cmd.args.length; i < L; i += 1)	{
 			value = this.comparison(cmd.args[i].key,value,cmd.args[i].value.value);
 			}
@@ -498,7 +599,9 @@ command (everything else that's supported).
 		globals.binds[globals.focusBind] = value;
 		return value;
 		}
-//can be triggered by translateTemplate OR by handleType_Block.
+
+
+//can be triggered by runTLC OR by handleType_Block.
 	this.executeCommands = function(commands,globals)	{
 //		console.log(" -> running peggyInstance.executeCommands"); // console.dir(commands);
 		//make sure all the globals are defined. whatever is passed in will overwrite the defaults.
@@ -554,7 +657,7 @@ function getRulesFromTextarea()	{
 	
 	if(success)	{
 		console.log(" -> successfully built pegParser");
-//		translateTemplate();
+//		runTLC();
 		}
 	}
 
@@ -589,7 +692,7 @@ function getRules(rulesURL)	{
 			
 			if(success)	{
 				console.log(" -> successfully built pegParser");
-				translateTemplate();
+				runTLC();
 				}
 			}
 		});
@@ -604,8 +707,8 @@ $(function() {
 	getRulesFromTextarea(); //'new_db_rules.pegjs'
 
 	bob = new peggy('someTemplate',sampleProdData);
-	frank = new peggy('someOtherTemplate',sampleProdData);
-	$("#contentGoesHere").append(bob.translateTemplate());
+//	frank = new peggy('someOtherTemplate',sampleProdData);
+	$("#contentGoesHere").append(bob.runTLC());
 	});
 </script>
 </head>
@@ -799,24 +902,33 @@ lb
 </textarea>
 
 
-
-
-
 <div id='someTemplate'>
-	<img data-tlc="bind $var '$.product.prod_image1'; apply --img --media=$var --width=100 --height=100 --bgcolor='#000000' --append;" />
-	<h1 data-tlc="bind $var '$.product.name'; format --append=' - thats right! '; apply --append;"></h1>
-	<h2 data-tlc="bind $var '$.product.base_price'; format --currency='USD';  format --prepend='price tag: '; apply --append;"></h2>
-	<h5 data-tlc="bind $var '$.product.base_price'; math --add=20 --sub=10 --precision=0 --mult=3; format --currency='USD';  format --prepend='Fake msrp: '; apply --append;"></h5>
-	<h3 data-tlc="bind $var '$.product.created'; datetime --out='pretty'; apply --append;"></h3><br />
-	<div data-tlc="bind $var '$.product.prod_desc'; format --truncate=250; apply --append;"></div><br />
-	<div data-tlc="bind $var '$.product.prod_hash'; stringify $var; apply --append;">Stringify: </div>
-	<div data-tlc="bind $var '$.product.base_price'; apply --attrib='data-garbage';">should have data-garbage set</div>
+
+	<img data-tlc="bind $var '.product.prod_image1'; apply --img --media=$var --width=100 --height=100 --bgcolor='#000000' --replace;" />
+	<h1 data-tlc="bind $var '.product.name'; format --append=' - thats right! '; apply --append;"></h1>
+	<h2 data-tlc="bind $var '.product.base_price'; format --currency='USD';  format --prepend='price tag: '; apply --append;"></h2>
+	<h5 data-tlc="bind $var '.product.base_price'; math --add=20 --sub=10 --precision=0 --mult=3; format --currency='USD';  format --prepend='Fake msrp: '; apply --append;"></h5>
+	<h3 data-tlc="bind $var '.product.created'; datetime --out='pretty'; apply --append;"></h3><br />
+
+	<section data-tlc="transmogrify 'someOtherTemplate';"></section>
+
+	<div data-tlc="bind $var '.product.prod_desc'; format --truncate=250; apply --append;"></div><br />
+	<div data-tlc="bind $var '.product.prod_hash'; stringify $var; apply --append;">Stringify: </div>
+	<div data-tlc="bind $var '.product.base_price'; apply --attrib='data-garbage';">should have data-garbage set</div>
 	
-	<div data-tlc="bind $var '$.product.base_price';if (is $var --lt='100' --gt='2') {{ apply --show; }};"></div>
-	<div style='display:none;' data-tlc="bind $var '$.product.is_new';if (is $var --eq='1') {{ apply --show; }};">This should be visible</div>
-	<div style='display:none;' data-tlc="bind $var '$.product.is_new';if (is $var --ne='2') {{ apply --hide; }};">This should be hidden</div>
-	
-	<select name='alfred' data-tlc="bind $var '$.product.is_four'; apply ~tag --show;">
+	<div data-tlc="bind $var '.product.base_price';if (is $var --lt='100' --gt='2') {{ apply --show; }};"></div>
+	<div style='display:none;' data-tlc="bind $var '.product.is_new';if (is $var --eq='1') {{ apply --show; }};">This should be visible</div>
+	<div style='display:none;' data-tlc="bind $var '.product.is_new';if (is $var --ne='2') {{ apply --hide; }};">This should be hidden</div>
+
+	<fieldset>
+		<legend>Checkbox testing</legend>
+		<div><input type='checkbox'  data-tlc="bind $var '.product.is_four'; apply --select;" name='checkbox' />This is a checkbox (should be checked)</div>
+		<div><input type='checkbox'  data-tlc="bind $var '.product.is_nada'; apply --select;" checked="checked" name='checkbox' />This is a checkbox (should NOT be checked)</div>
+	</fieldset>
+
+	<fieldset>
+		<legend>All these inputs should be set to 4</legend>
+	<select name='alfred' data-tlc="bind $var '.product.is_four'; apply ~tag --select;">
 		<option value='1'>1</option>
 		<option value='2'>2</option>
 		<option value='3'>3</option>
@@ -824,15 +936,24 @@ lb
 		<option value='5'>5</option>
 		<option value='6'>6</option>
 	</select>
+	<br />
 	
+
+	<div><input type='text'  data-tlc="bind $var '.product.is_four'; apply ~tag --select;" name='textInput' size='3' />Text input</div>
 	
+	<br />
+	
+	<div><input type='radio' name='something' value='2' data-tlc="bind $var '.product.is_four'; apply ~tag --select;" />two</div>
+	<div><input type='radio' name='something' value='4' data-tlc="bind $var '.product.is_four'; apply ~tag --select;" />four</div>
+	<div><input type='radio' name='something' value='6' data-tlc="bind $var '.product.is_four'; apply ~tag --select;" />six</div>
+	</fieldset>
 </div>
 
-<div id='someOtherTemplate' data-tlc="bind $var '$.product.prod_name'; tag --overwrite;">
-	
-	<h3 data-tlc="bind $var '$.product.prod_msrp'; tag --overwrite;">Lorem Ispsum Producismo Namola</h3>
-	<img data-tlc="bind $var '$.product.prod_image1'; apply --img --media=$var --width=100 --height=100 --bgcolor='#000'  --append;" />
-	<div data-tlc="bind $var '$.product.prod_desc'; tag --overwrite;"></div>
+<div id='someOtherTemplate' data-tlc="bind $var '.product.prod_name'; tag --overwrite;" style='background-color:green;'>
+	HELLO WORLD!
+	<h3 data-tlc="bind $var '.product.prod_msrp'; tag --overwrite;">Lorem Ispsum Producismo Namola</h3>
+	<img data-tlc="bind $var '.product.prod_image1'; apply --img --media=$var --width=100 --height=100 --bgcolor='#000'  --append;" />
+	<div data-tlc="bind $var '.product.prod_desc'; tag --overwrite;"></div>
 </div>
 
 

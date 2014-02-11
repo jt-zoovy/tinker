@@ -96,7 +96,12 @@ var router = {
 			return r;
 			},
 		'match' : function(routeObj,hash){
-			var pattern = routeObj.route.replace(/{{(.*?)}}/g,'([^\\/]+)'), r = false, regex = new RegExp(pattern), isMatch = regex.exec(hash);
+
+			var pattern = routeObj.route.replace(/{{(.*?)}}/g,'([^\\/]+)')
+			if(routeObj.route.charAt(routeObj.route.length - 1) == '*' )	{pattern += "(/\?.*)?";}
+
+			var r = false, regex = new RegExp(pattern), isMatch = regex.exec(hash);
+			
 //regex.exec[0] will be the match value. so comparing that to the hash will ensure no substring matches get thru.
 //substring matches can be accomplished w/ a regex in the route.
 			if(isMatch && isMatch[0] == hash)	{
@@ -129,7 +134,7 @@ var router = {
 			}
 		else	{
 			console.warn("for route "+routeObj.route+", routeObj.type is not set ["+routeObj.type+"] OR typeof is not a function ["+(typeof router.matchFunctions[routeObj.type])+"].");
-			console.dir(routeObj);
+//			console.dir(routeObj);
 			}
 		return r;
 		},
@@ -213,7 +218,7 @@ var router = {
 			if(routeObj)	{
 				routeObj.hash = location.hash;
 //				routeObj.hashParams = (location.hash.indexOf('?') >= 0 ? app.u.kvp2Array(location.hash.split("?")[1]) : {})
-				console.log(" -> WOOT! valid route!"); console.dir(routeObj);
+				console.log(" -> WOOT! valid route!"); // console.dir(routeObj);
 				router._executeCallback(routeObj);
 				}
 			else	{
@@ -238,7 +243,7 @@ router.appendHash({'type':'exact','route':'company','callback':'company'});
 router.appendHash({
 	'type':'regexp',
 	'route': /^(.*?)\/open$/,
-	'callback':function(f){console.log(" -> hit on the regex!!!!!!"); console.dir(f);}
+	'callback':function(f){console.log(" -> hit on the regex!!!!!!");}
 	});
 
 router.addAlias("404",function(vars){  //third param of extensions/dependencies array? Would allow us to not load extensions till they're needed. speeds up init.
@@ -296,6 +301,7 @@ router.addAlias("company",function(){
 <div id='globalMessaging'></div>
 <a href='#!product/XYZ'>product link - XYZ</a><br />
 <a href='#!product/ABC/seo.html'>product link - ABC</a><br />
+<a href='#!product/ABC?some=params'>#!product/ABC?some=params</a><br />
 <a href='#!company'>#!company</a><br />
 <a href='#!/company'>#!/company</a><br />
 <a href='#!'>#!</a><br />
