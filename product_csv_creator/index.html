@@ -1,0 +1,196 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Untitled Document</title>
+
+
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
+<script type='text/javascript'>
+
+
+
+var blobs = new Array(
+	"Bacon ipsum dolor sit amet ground round bacon tail biltong tenderloin, kielbasa ribeye pancetta ham landjaeger rump porchetta. Turkey shank drumstick, pastrami shoulder meatball leberkas pancetta t-bone pork short ribs jowl. Biltong ground round corned beef kevin, tenderloin chuck ham hock short loin cow tongue shoulder beef ribs t-bone swine sirloin.",
+	"Sirloin ham leberkas shoulder tri-tip sausage prosciutto. Turkey t-bone filet mignon pig hamburger meatball tongue salami pancetta spare ribs corned beef kielbasa fatback.",
+	"Tri-tip ribeye ground round, jerky chicken pork chop pork loin shankle landjaeger chuck frankfurter. Jerky venison cow ham hock hamburger short loin prosciutto. Chicken pork chop shank doner meatball, boudin hamburger bacon beef tenderloin jowl. Venison prosciutto drumstick jerky short loin meatloaf landjaeger turkey sirloin.",
+	"Pastrami fatback beef porchetta pork chop doner. Corned beef chicken shank frankfurter, cow pork chop tail doner pancetta. Sausage short loin turducken, shoulder prosciutto corned beef tri-tip beef drumstick filet mignon tongue pork meatball pastrami jerky. Beef short ribs ham chuck pork loin, jerky jowl salami hamburger brisket.",
+	"Ham turducken tongue shank drumstick salami. Tongue beef ribs turducken prosciutto meatball venison strip steak turkey tail spare ribs biltong. Venison biltong jowl bresaola porchetta pastrami. Capicola short ribs leberkas tail chuck, landjaeger sirloin meatball porchetta rump ball tip kevin short loin spare ribs.",
+	"Biltong brisket sirloin ball tip tri-tip doner t-bone pastrami ground round shankle chuck hamburger short loin jerky boudin. Pork belly boudin beef ribeye chuck kevin jerky drumstick filet mignon tongue sausage. Pastrami kielbasa frankfurter tenderloin, boudin bacon tail t-bone strip steak corned beef.",
+	"Beef ribs sausage doner tenderloin pig salami. Tenderloin ham doner tail, flank sausage kielbasa t-bone ground round bresaola. Strip steak bresaola meatloaf flank ham hock tri-tip prosciutto kielbasa hamburger beef filet mignon venison leberkas.",
+	"Filet mignon spare ribs tenderloin meatball ball tip t-bone frankfurter shank tri-tip fatback jerky shoulder beef flank. Filet mignon biltong venison ribeye beef ribs ball tip, swine bacon sausage shoulder beef frankfurter doner. Pork loin pig boudin, ground round pork belly landjaeger salami sirloin brisket filet mignon. "
+	);
+
+var idprefix = new Array("ground","pork","belly","meatball","tbone","frank",'shank');
+
+var smallBlobs = new Array(
+	"Shank swine sirloin sausage boudin short loin",
+	"frankfurter jowl andouille beef. Pork chop",
+	"Jerky pork chop beef short ribs doner pork ",
+	"Pancetta fatback corned beef",
+	"kielbasa capicola jowl pig leberkas",
+	"iltong chicken shankle landjaeger chuck",
+	"Beef ribs brisket chicken salami pig capicola",
+	"strip steak kielbasa frankfurter cow",
+	"meatloaf turkey pancetta flank kevin",
+	"landjaeger meatball tail pork",
+	"Beef ribs sausage doner tenderloin pig salami",
+	"ball tip kevin short loin spare ribs",
+	"Bacon ipsum dolor sit amet ground round",
+	"Turkey t-bone filet mignon pig ",
+	"hamburger meatball tongue salami pancetta"
+	);
+
+var mfgs = new Array('sony','panasonic','lg','kenmore','vizio','samsung','viewsonic','asus','casio','canon','nikon','microsoft','apple','logitech');
+var colors = new Array('red','orange','yellow','green','blue','purple','brown','black');
+var materials = new Array('metal','wood','plastic','glass','vibranium');
+
+function randomBoolean()	{
+	return (Math.floor(Math.random() * 2) + 1) == 1 ? 1 : 0;
+	}
+
+function getRandom(myArray)	{
+	return myArray[Math.floor(Math.random() * myArray.length)];
+	}
+
+function getXRandom(qty,myArray)	{
+	var string = '';
+	for(var i = 0; i < qty; i += 1)	{
+		string += getRandom(myArray)+"\\n";
+		}
+	return string;
+	}
+
+function toTitleCase(str)	{
+    return str.replace(/\w\S*/g, function(txt){return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();});
+}
+
+function addCostAndPrice(myArray){
+	var $tr = $("<tr>");
+	var cost = (Math.floor(Math.random() * 10) + 1);
+	$tr.append("<td>"+cost+"</td>");
+	$tr.append("<td>"+(cost+10)+"</td>");
+	return $tr.children();
+	}
+
+
+function getRow(i)	{
+	var $tr = $("<tr>");
+		$tr.append("<td>PRODUCT_"+i+"</td>"); //sku
+		$tr.append(addCostAndPrice()); //cost and price.
+		$tr.append("<td>"+((Math.floor(Math.random() * 10) + 1))+"#"+"</td>"); //weight.
+		$tr.append("<td>"+toTitleCase(getRandom(smallBlobs))+"</td>"); //product name
+		$tr.append("<td>"+$.trim(getXRandom((Math.floor(Math.random() * 4) + 1),blobs))+"</td>"); //description
+		$tr.append("<td>"+(randomBoolean() ? $.trim(getXRandom((Math.floor(Math.random() * 3) + 1),blobs)) : '')+"</td>"); //detail. 50/50 chance a detail is generated.
+		$tr.append("<td>"+(randomBoolean() ? $.trim(getXRandom((Math.floor(Math.random() * 8) + 1),blobs)) : '')+"</td>"); //features. 50/50 chance a feature list is generated.
+		var rand = (Math.floor(Math.random() * 7) + 1);
+		$tr.append("<td>pigs/pig_"+rand+"</td>"); //image1
+		$tr.append("<td>pigs/pig_"+(rand+1)+"</td>"); //image2
+		$tr.append("<td>"+(randomBoolean() ? "pigs/pig_"+(rand+2) : '')+"</td>"); //image3
+		$tr.append("<td>"+randomBoolean()+"</td>"); //is_sale
+		$tr.append("<td>"+randomBoolean()+"</td>"); //is_bestseller
+		$tr.append("<td>"+randomBoolean()+"</td>"); //is_newarrival
+		$tr.append("<td>"+getRandom(mfgs)+"</td>"); //mfg
+		$tr.append("<td>"+getRandom(idprefix)+'-'+(Math.floor(Math.random() * 1000000) + 1000)+"</td>"); //mfgid
+		$tr.append("<td>"+getRandom(colors)+"</td>"); //color
+		$tr.append("<td>"+getRandom(materials)+"</td>"); //material
+
+	return $tr;
+	}
+
+function buildTable()	{
+	$tbody = $('#toCSV');
+
+	var csv = "%PRODUCTID,zoovy:base_cost,zoovy:base_price,zoovy:base_weight,zoovy:prod_name,zoovy:prod_desc,zoovy:prod_detail,zoovy:prod_features,zoovy:prod_image1,zoovy:prod_image2,zoovy:prod_image3,is:sale,is:bestseller,is:newarrival,zoovy:prod_mfg,zoovy:prod_mfgid,zoovy:prod_color,zoovy:prod_material\n";
+	var headArr = csv.split(',');
+	var $tr = $("<tr>");
+	for(var i = 0; i < headArr.length; i++)	{
+		$tr.append("<td>"+headArr[i]+"</td>");
+		}
+	$tr.appendTo($tbody);
+	for(var i = 1; i <= 250; i += 1)	{
+		$tbody.append(getRow(i));
+/*		var prodArr = new Array();
+		prodArr.push("PRODUCT_"+i); //sku
+		addCostAndPrice(prodArr); //cost and price.
+		prodArr.push(((Math.floor(Math.random() * 10) + 1))+"#"); //weight.
+		prodArr.push(toTitleCase(getRandom(smallBlobs))); //product name
+		prodArr.push($.trim(getXRandom((Math.floor(Math.random() * 4) + 1),blobs))); //description
+		console.log(randomBoolean());
+		prodArr.push(randomBoolean() ? $.trim(getXRandom((Math.floor(Math.random() * 3) + 1),blobs)) : ' '); //detail. 50/50 chance a detail is generated.
+		prodArr.push(randomBoolean() ? $.trim(getXRandom((Math.floor(Math.random() * 8) + 1),blobs)) : ' '); //features. 50/50 chance a feature list is generated.
+		var rand = (Math.floor(Math.random() * 7) + 1);
+		prodArr.push("pigs/pig_"+rand); //image1
+		prodArr.push("pigs/pig_"+(rand+1)); //image2
+		prodArr.push(randomBoolean() ? "pigs/pig_"+(rand+2) : ' '); //image3
+		prodArr.push(randomBoolean()); //is_sale
+		prodArr.push(randomBoolean()); //is_bestseller
+		prodArr.push(randomBoolean()); //is_newarrival
+		prodArr.push(getRandom(mfgs)); //mfg
+		prodArr.push(getRandom(idprefix)+'-'+(Math.floor(Math.random() * 1000000) + 1000)); //mfgid
+		prodArr.push(getRandom(colors)); //color
+		prodArr.push(getRandom(materials)); //material
+		csv += prodArr.join(',')+"\n";
+*/		}
+
+	$tbody.toCSV();
+
+	}
+
+
+
+
+/* will convert a tbody into a csv */
+// for whatever reason, having this chuck of code not last is causing issues. leave it at bottom.
+jQuery.fn.toCSV = function() {
+	var data = $(this).first(); //Only one table
+	var csvData = [];
+	var tmpArr = [];
+	var tmpStr = '';
+	data.find("tr").each(function() {
+	  if($(this).find("th").length) {
+		  $(this).find("th").each(function() {
+			tmpStr = ($(this).data('csvhead')) ? $(this).data('csvhead') : $(this).text(); //allow for a csv specific header to be set. if not, default to text
+			tmpStr = tmpStr.replace(/"/g, '""');
+			tmpArr.push('"' + tmpStr + '"');
+		  });
+		  csvData.push(tmpArr);
+	  } else {
+		  tmpArr = [];
+			 $(this).find("td").each(function() {
+				  if($(this).text().match(/^-{0,1}\d*\.{0,1}\d+$/)) {
+					  tmpArr.push(parseFloat($(this).text()));
+				  } else {
+					  tmpStr = $(this).text().replace(/"/g, '""');
+					  tmpArr.push('"' + tmpStr + '"');
+				  }
+			 });
+		  csvData.push(tmpArr.join(','));
+	  }
+	});
+	var output = csvData.join('\n');
+	var uri = 'data:application/csv;charset=UTF-8,' + encodeURIComponent(output);
+	window.open(uri);
+	}
+
+
+</script>
+
+
+</head>
+<body onLoad="buildTable();">
+
+<!--
+<textarea style='width:100%; height:500px;' id='csv'></textarea>
+-->
+<table>
+<tbody id='toCSV'></tbody>
+</table>
+
+
+<script>
+//document.getElementById('csv').value = csv;
+</script>
+
+</body>
+</html>

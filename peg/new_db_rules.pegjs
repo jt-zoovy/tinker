@@ -1,87 +1,150 @@
-start
- = call+
+dataTLC
+ = grammar+
 
-call
- = command:(block_command / command) _ lb* { return command }
+grammar
+ = cmd:(IfStatement) _ lb* { return cmd; }
+ / cmd:(BindStatement) _ lb* { return cmd; } 
+ / cmd:(command) _ lb* { return cmd; }
 
 command
- = _ cmd:[A-Za-z0-9?]+ args:((ws+ value)+)? _ lb+ {
+ = _ module:([a-z_]+ "#")? cmd:[a-z?]+ args:((ws+ value)+)? _ lb* {
      return {
        type: "command",
+       module: module ? module[0].join("") : "core",
        name: cmd.join("").toLowerCase(),
        args: args ? args.map(function(a) { return a[1] }) : null
      }
    }
 
-block
- = "{" lb* e:(block_command / command)+ lb* _ "}" { return e }
 
-block_command
- = e:command _ b:block lb* {
-     e.block = b;
-     return e;
-}
+// ** BIND **
+// bind $var 'something'; (jsonpath lookup)
+// bind $var $someothervar; (jsonpath lookup)
+// bind $var ~tag; (returns tag id/path)
+// bind ~tag '#tagid'; jQuery('#tagid')
+// bind ~tag $tagid jQuery($tagid)
+BindStatement
+ = "bind" _ set:(variable / tag) _ src:(variable / scalar / tag) _ lb+ {
+  return { type:"BIND", Set:set, Src:src }
+  }
 
+
+
+IfStatement
+  = "if" _ "(" _ condition:command _ ")" _ ifStatement:Block elseStatement:(_ "else" _ Block)? _ lb+ {
+      return ({
+        type: "IF",
+        When: condition,
+        IsTrue: ifStatement,
+        IsFalse: elseStatement !== null ? elseStatement[3] : null
+      });
+   }
+
+
+Block
+  = "{{" _ statements:(StatementList _)? "}}" {
+      return {
+        type: "Block",
+        statements: statements !== null ? statements[0][0] : []
+      };
+    }
+
+StatementList
+  = head:Statement tail:(_ Statement)* {
+      var result = [head];
+      for (var i = 0; i < tail.length; i++) {
+        result.push(tail[i][1]);
+      }
+      return result;
+    }
+
+Statement
+  = Block
+  / command+
+  
+
+
+
+/* value types */
+
+// ~tag is a reference to a jquery object
+tag
+ = "~" tag:([a-zA-Z]+) {
+   // tag table should maintain reference to tags on DOM
+   return { type:"tag", tag:tag.join(""), jq:null }
+   }
+
+boolean
+ = "true" {return{ "type":"boolean", "value": true }}
+ / "false" {return{ "type":"boolean", "value": false }}
 
 // longopt start with a --
 longopt
- = "--" k:([a-zA-Z]+) "=" v:( value )  {
+ = "--" k:([a-zA-Z]+) "=" v:( value ) {
     return {
        type: "longopt",
        key: k.join(""),
        value: v
        }
     }
+ / "--" k:([a-zA-Z]+) {
+    return {
+      type: "longopt",
+      key: k.join(""),
+      value: null
+      }
+    }
+
 
 // scalar (string)
 // NOTE: at this point there is no way to escape a ' in a string.
-// 
+//
 scalar
  = "'" v:([^']*) "'" {
-     return { 
+     return {
        type: "scalar",
        value: v.join("")
-     } 
+     }
    }
 
 // Variables can't start with a number
 variable
- = "$" v:([a-zA-Z0-9_]*) { 
-     return { 
+ = "$" v:([a-zA-Z0-9_]*) {
+     return {
        type: "variable",
        value: v.join("")
-     } 
+     }
    }
 
 integer
-  = digits:[0-9]+ { 
-      return { 
-        type: "integer", 
-        value: parseInt(digits.join(""), 10) 
+  = digits:[0-9]+ {
+      return {
+        type: "integer",
+        value: parseInt(digits.join(""), 10)
       }
     }
 
-hexcolor 
+hexcolor
   = "#" v:([A-Fa-f0-9][A-Fa-f0-9][A-Fa-f0-9][A-Fa-f0-9][A-Fa-f0-9][A-Fa-f0-9]) {
-     return { type:"hexcolor", value: v.join("")  }
+     return { type:"hexcolor", value: v.join("") }
      }
 
 additive
-  = left:muldiv _ sign:[+-] _ right:additive { 
-      return { 
-        type: "command", 
-        name:sign, 
-        args:[left,right] 
+  = left:muldiv _ sign:[+-] _ right:additive {
+      return {
+        type: "command",
+        name:sign,
+        args:[left,right]
       }
     }
   / muldiv
 
 muldiv
   = left:primary _ sign:[*/] _ right:muldiv {
-      return { 
-        type: "command", 
-        name: sign, 
-        args:[left, right] 
+      return {
+        type: "command",
+        name: sign,
+        args:[left, right]
       }
     }
   / primary
@@ -91,11 +154,11 @@ primary
   / "(" _ additive:additive _ ")" { return additive; }
 
 value
- = longopt / variable / integer / scalar / hexcolor / additive 
+ = longopt / variable / integer / scalar / boolean / tag / hexcolor / additive
 
 // /* i am a comment (i can only appear before a command) */
 comment
-  = "/*" (!"*/" SourceCharacter)* "*/"
+  = "/*" (!"*/" SourceCharacter)* "*/" { return{}; }
 
 SourceCharacter
   = .
@@ -108,3 +171,4 @@ _
 
 lb
  = ";"
+

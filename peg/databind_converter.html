@@ -5,7 +5,17 @@
 <title>Untitled Document</title>
 
 
+<style>
+
+body, html	{height:100%;}
+textarea	{height:85%; width:45%;}
+
+</style>
+
+
 <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
+
+
 
 <script>
 
@@ -36,6 +46,22 @@ function parseDataBind(data)	{
 	return rule;
 	}
 
+
+//pass an object in as first param and an array as the second.
+//This will return a NEW object, removing any keys from 'obj' that ARE declared in 'blacklist'
+function getBlacklistedObject(obj,blacklist)	{
+	var r = $.extend({},obj);
+	for(index in obj)	{
+	// SANITY -> indexOf not supported for searching arrays in IE8
+		if($.inArray(index, blacklist) >= 0)	{
+			delete r[index];
+			}
+		else	{} //is not in blacklist
+		}
+	return r;
+	}
+
+
 function parseDataVar(v)	{
 	var r; //what is returned.
 	if(v)	{
@@ -45,12 +71,72 @@ function parseDataVar(v)	{
 	return r;
 	}
 
+//takes a databind and builds a string, built from all the key/value pairs in odb, formatted for tlc.
+function buildParams(odb)	{
+	var tmp = getBlacklistedObject(odb,['format','var','extension','pretext','posttext','useParentData']);
+	r = ""; //what is returned. 
+	for(var index in tmp)	{
+		r += " --"+index+"='"+tmp[index]+"'"
+		}
+	return r;
+	}
 
+function upgradeRenderFormat(odb)	{
+	var r = false;
+	switch(odb.format){
+		
+		case 'stuffList':
+			console.warn("The following data-bind was using 'stufflist', which is a deprecated list format. The data-bind was upgraded to 'loop', but this does not behave in the exact same manner. You should investigate this further (most likely update the template that contained this element from quickstart (or whatever extension loaded it).");
+			r = "controller#loop --templateid='"+odb.loadsTemplate+"'; "; break;
+		case 'showIfSet':
+			r = "if(is $var --notblank) {{ apply --show; }}; "; break;
+		case 'showIfMatch':
+			r = "if(is $var --eq='"+odb.matchValue+"') {{ apply --show; }}; "; break;
+		case 'hideIfSet':
+			r = "if(is $var --notblank) {{ apply --hide; }}; "; break;
+		case 'optionsFromList':
+			r = "controller#optionsfromlist; "; break;
+		case 'youtubeVideo':
+			r = "controller#youtubevideo; "; break;
+		case 'addTagSpans':
+			r = "controller#addtagspans; "; break;
+		case 'addClass':
+			r = "if(is $var --notblank) {{ apply --class='"+odb.className+"'; }}; "; break;
+		case 'wiki':
+			r = "wiki --extension='quickstart'; "; break;
+		case 'truncText':
+			r = "format --truncate='"+odb.numCharacters+"'; "; break;
+		case 'selectedOptionsDisplay':
+			r = "controller#selectedoptionsdisplay;  "; break;
+		case 'epoch2pretty':
+			r = "datetime --out='pretty'; "; break;
+		case 'epoch2mdy':
+			r = "datetime --out='mdy'; "; break;
+		case 'setVal':
+			r = "apply --input-value; "; break;
+		case 'popVal':
+			r = "apply --select=$var; "; break;
+		case 'assignAttribute':
+			r = "apply --attrib='"+odb.attribute+"'; "; break;
+		case 'loadsTemplate':
+			r = "transmogrify '"+odb.loadsTemplate+"'; "; break;
+		case 'money':
+			r = "format --currency='USD'; "; break;
+		case 'processList':
+			r = "controller#loop --templateid='"+odb.loadsTemplate+"'; "; break;
+			break;
+		
+		default:
+			r = false;
+		}
+	
+	return r;
+	}
 
 function doIt2It()	{
 	console.log(" -> doIt2It");
 	var template = $('#databindContent').val();
-	var $t = $(template);
+	var $t = $("<div>").append($(template)); //parent div created so that .html returns entire template.
 	$("[data-bind]",$t).each(function(){
 		var $tag = $(this);
 		//old: var: session(session.recentCategories.0); format:breadcrumb; extension:store_navcats; loadsTemplate: breadcrumbTemplate;
@@ -58,21 +144,70 @@ function doIt2It()	{
 		var odb = parseDataBind($tag.data('bind')); // Old Data Bind. sure.
 		var command = '';
 
+
 		if(odb.var)	{
-			command += "bind '$"+odb.var.split('(')[0]+'.'+parseDataVar(odb.var)+"'; ";
+			command += "bind $var '"+(odb.var.split('(')[0] == 'product' ? '.%ATTRIBS' : '')+'.'+parseDataVar(odb.var)+"'; ";
 			}
 
-		if(odb.extension)	{
+		if(odb.defaultVar)	{
+			command += "if(is $var --blank) {{bind $var '"+odb.defaultVar+"';}}; "
+			}
+		if(odb.defaultValue)	{
+			command += "if(is $var --blank) {{bind var '"+odb.defaultValue+"';}}; "
+			}
+
+
+
+		if(odb.pretext)	{
+			command += "format --prepend='"+(odb.pretext.charAt(0) == ' ' ? odb.pretext.substr(1) : odb.pretext)+"'; " //for pretext, the leading whitespace is probably not desired in most cases.
+			}
+
+		if(odb.posttext)	{
+			command += "format --append='"+odb.posttext+"'; "; //here, leading whitespace is probably desired and the trailing whitespace isn't likely to hurt anything.
+			}
+
+		
+		if(odb.format == 'imageURL')	{
+			var bgcolor = odb.bgcolor ? odb.bgcolor : '#ffffff';
+			if(bgcolor.charAt(0) != '#')	{bgcolor = '#'+bgcolor} //regularize data.
+			command += "apply --img --media=$var --width="+(odb.width ? odb.width : $tag.width())+" --height="+(odb.height ? odb.height : $tag.height())+" --bgcolor='"+bgcolor+"' --replace;"
+			//special case for image handling.
+			}
+		else if(odb.extension)	{
+			var format = odb.format.toLowerCase().replace(/[^a-z]/g,''); //only lowercase characters are allowed. no numbers.
+			if(format != odb.format)	{console.warn("The format ["+odb.format+"] was rewritten as ["+format+"] to conform to the tlcformat naming conventions.");}
 			command += odb.extension+"#";
-			command += odb.format+';';
+			command += format+' ';
+			command += buildParams(odb);
+			command += " --legacy ";
+			command += "; apply --append;";
 			}
 		else	{
-			command += "tag --overwrite;";
+			if(odb.format == 'text')	{
+				//this is the default. no special formatting or anything else is necessary.
+				command += "apply --append;";
+				}
+			else if(upgradeRenderFormat(odb))	{
+				command += upgradeRenderFormat(odb);
+				command += "apply --append;";
+				}
+			else	{
+				console.warn("Something went wrong.  The following line did not specify an extension and the renderFormat was not handled in upgradeRenderFormat.\ndatabind: "+$tag.data('bind'));
+				}
 			}
 		
-		
-		console.log(command);
-		$tag.removeAttr('data-bind').attr('data-tlc',command);
+//		console.log($tag.data('bind')); 
+//		console.log(command);// console.log("  ");
+
+
+		if(odb.useParentData)	{
+			console.warn("On the following renderformat, useParentData is set. That case isn't handled just yet. the data-bind was left in place to make it easier to find/update.\ndatabind: "+$tag.data('bind'));
+			}
+		else	{
+			$tag.removeAttr('data-bind');
+			}
+
+		$tag.attr('data-tlc',command);
 		})
 	$('#grammarContent').val($t.html())
 	}
@@ -84,9 +219,17 @@ function doIt2It()	{
 
 
 
-
-<textarea id='databindContent' style='width:40%; height:100px;'>
+<button onClick='doIt2It();'>Do It</button><br /><!--
+<p>
+Things to know.  <ol>
+	<li>No uppercase in renderformats</li>
+	<li>no underscores in render formats</li>
+</ol>
+</p>-->
+<textarea id='databindContent'>
 <div id='productTemplate' class='productPage'>
+
+<h1 data-bind='var: product(zoovy:prod_name); defaultVar: product(zoovy:prod_seo); format:text;'></h1>
 
 <ul class='clearfix noPadOrMargin fluidList breadcrumb' data-bind='var: session(session.recentCategories.0); format:breadcrumb; extension:store_navcats; loadsTemplate: breadcrumbTemplate;'></ul>
 
@@ -114,7 +257,7 @@ function doIt2It()	{
 	</td>
 
 	<td class='prodSummaryContainer marginBottom no_underline'>
-	<h1 data-bind='var: product(zoovy:prod_name); format:text;'></h1>
+	
 
 	<hgroup class='marginBottom'>
 		<h5 class='stid' data-bind='var: product(pid); format:text; pretext: Sku: ;'></h5>
@@ -232,9 +375,8 @@ It's done this way because ID's hard coded into template are bad mojo (templates
 </div></textarea>
 
 
-<textarea id='grammarContent' style='width:40%; height:100px;'></textarea>
+<textarea id='grammarContent'></textarea>
 
-<button onClick='doIt2It();'>Do It</button>
 
 </body>
 </html>
